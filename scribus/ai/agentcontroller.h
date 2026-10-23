@@ -75,8 +75,8 @@ public:
 	bool isBusy() const;
 
 public slots:
-	/** @brief Adds the prompt to the conversation and asks the model. */
-	void sendPrompt(const QString& text);
+	/** @brief Adds the prompt (and any image files, such as a photo or scan) to the conversation and asks the model. */
+	void sendPrompt(const QString& text, const QStringList& imagePaths = {});
 	/** @brief Cancels the running request, if any. */
 	void cancel();
 	/** @brief Forgets the conversation history. */

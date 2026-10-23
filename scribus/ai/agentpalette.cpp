@@ -8,6 +8,8 @@ to the COPYING file provided with the program.
 #include <QCheckBox>
 #include <QComboBox>
 #include <QEvent>
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QFontDatabase>
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -67,6 +69,14 @@ AgentPalette::AgentPalette(QWidget* parent)
 	languageChange();
 
 	m_controller->setScriptRunner(&runScriptThroughScripter);
+
+	// For automated tests only: SCRIBUS_AGENT_ATTACH names image files to attach at start-up.
+	const QString preAttached = qEnvironmentVariable("SCRIBUS_AGENT_ATTACH");
+	if (!preAttached.isEmpty())
+	{
+		m_attachments = preAttached.split(QLatin1Char(';'), Qt::SkipEmptyParts);
+		updateAttachments();
+	}
 
 	connect(m_controller, &AgentController::assistantChunk, this, &AgentPalette::onAssistantChunk);
 	connect(m_controller, &AgentController::approvalRequested, this, &AgentPalette::onApprovalRequested);
@@ -139,6 +149,11 @@ void AgentPalette::buildUi()
 	m_settingsPanel->setVisible(false);
 	layout->addWidget(m_settingsPanel);
 
+	m_attachLabel = new QLabel(root);
+	m_attachLabel->setWordWrap(true);
+	m_attachLabel->setVisible(false);
+	layout->addWidget(m_attachLabel);
+
 	m_input = new QPlainTextEdit(root);
 	m_input->setMaximumHeight(90);
 	m_input->installEventFilter(this);
@@ -148,8 +163,10 @@ void AgentPalette::buildUi()
 	auto* buttonLayout = new QHBoxLayout(buttons);
 	buttonLayout->setContentsMargins(0, 0, 0, 0);
 	m_newChatButton = new QPushButton(buttons);
+	m_attachButton = new QPushButton(buttons);
 	m_sendButton = new QPushButton(buttons);
 	buttonLayout->addWidget(m_newChatButton);
+	buttonLayout->addWidget(m_attachButton);
 	buttonLayout->addStretch(1);
 	buttonLayout->addWidget(m_sendButton);
 	layout->addWidget(buttons);
@@ -158,6 +175,7 @@ void AgentPalette::buildUi()
 
 	connect(m_sendButton, &QPushButton::clicked, this, &AgentPalette::sendClicked);
 	connect(m_newChatButton, &QPushButton::clicked, this, &AgentPalette::newChatClicked);
+	connect(m_attachButton, &QPushButton::clicked, this, &AgentPalette::attachClicked);
 	connect(m_approveButton, &QPushButton::clicked, this, &AgentPalette::approveClicked);
 	connect(m_rejectButton, &QPushButton::clicked, this, &AgentPalette::rejectClicked);
 	connect(m_settingsToggle, &QToolButton::toggled, this, &AgentPalette::settingsToggled);
@@ -172,6 +190,8 @@ void AgentPalette::languageChange()
 	setWindowTitle(tr("AI Agent"));
 	m_input->setPlaceholderText(tr("Describe what you want to build or change..."));
 	m_newChatButton->setText(tr("New chat"));
+	m_attachButton->setText(tr("Attach image..."));
+	m_attachButton->setToolTip(tr("Attach a photo or scan, for example the client's printed notice"));
 	m_sendButton->setText(m_controller && m_controller->isBusy() ? tr("Stop") : tr("Send"));
 	m_settingsToggle->setText(m_settingsToggle->isChecked() ? tr("Settings \xE2\x96\xB4") : tr("Settings \xE2\x96\xBE"));
 	m_approveButton->setText(tr("Run script"));
@@ -268,20 +288,47 @@ void AgentPalette::sendClicked()
 		m_controller->cancel();
 		return;
 	}
-	const QString text = m_input->toPlainText().trimmed();
-	if (text.isEmpty())
+	QString text = m_input->toPlainText().trimmed();
+	if (text.isEmpty() && m_attachments.isEmpty())
 		return;
+	if (text.isEmpty())
+		text = tr("Read the attached image.");
 	applySettings(); // the user may not have left the last settings field yet
 	m_input->clear();
-	appendUserMessage(text);
+	QStringList shown;
+	for (const QString& path : std::as_const(m_attachments))
+		shown << QFileInfo(path).fileName();
+	appendUserMessage(shown.isEmpty() ? text : text + QStringLiteral(" [") + tr("image") + QStringLiteral(": ") + shown.join(QStringLiteral(", ")) + QLatin1Char(']'));
 	startAssistantMessage();
-	m_controller->sendPrompt(text);
+	const QStringList images = m_attachments;
+	m_attachments.clear();
+	updateAttachments();
+	m_controller->sendPrompt(text, images);
+}
+
+void AgentPalette::attachClicked()
+{
+	const QStringList files = QFileDialog::getOpenFileNames(this, tr("Attach image"), QString(),
+	                                                       tr("Images (*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.webp);;All files (*)"));
+	m_attachments << files;
+	updateAttachments();
+}
+
+void AgentPalette::updateAttachments()
+{
+	QStringList names;
+	for (const QString& path : std::as_const(m_attachments))
+		names << QFileInfo(path).fileName();
+	m_attachLabel->setText(tr("Image: %1").arg(names.join(QStringLiteral(", "))));
+	m_attachLabel->setVisible(!names.isEmpty());
 }
 
 void AgentPalette::newChatClicked()
 {
 	m_controller->newConversation();
 	m_transcript->clear();
+	m_attachments.clear();
+	updateAttachments();
 	m_assistantOpen = false;
 	showApprovalBar(false);
 	m_approvalAlways->setChecked(false);

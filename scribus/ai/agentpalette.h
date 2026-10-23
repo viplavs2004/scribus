@@ -45,6 +45,7 @@ protected:
 private slots:
 	void sendClicked();
 	void newChatClicked();
+	void attachClicked();
 	void settingsToggled(bool shown);
 	void providerChanged(int index);
 	void applySettings();
@@ -65,6 +66,7 @@ private:
 	void startAssistantMessage();
 	void appendNotice(const QString& text);
 	void showApprovalBar(bool shown);
+	void updateAttachments();
 
 	AgentController* m_controller {nullptr};
 
@@ -72,6 +74,9 @@ private:
 	QPlainTextEdit* m_input {nullptr};
 	QPushButton* m_sendButton {nullptr};
 	QPushButton* m_newChatButton {nullptr};
+	QPushButton* m_attachButton {nullptr};
+	QLabel* m_attachLabel {nullptr};
+	QStringList m_attachments;
 	QToolButton* m_settingsToggle {nullptr};
 	QWidget* m_settingsPanel {nullptr};
 	QComboBox* m_providerCombo {nullptr};

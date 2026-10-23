@@ -4,7 +4,9 @@ to the COPYING file provided with the program.
 */
 #include "agentcontroller.h"
 
+#include <QBuffer>
 #include <QDateTime>
+#include <QImage>
 #include <QFile>
 #include <QFuture>
 #include <QJsonArray>
@@ -82,6 +84,11 @@ namespace
 		"are centred with size_factor about 1.2; party names and the body are 'justify'; labels such as COMPLAINANTS and the signature lines are "
 		"'right'. Copy the text exactly as in the client's document, one paragraph per printed paragraph. The size and the condensing are fitted "
 		"for you (report as for create_notice_ad). Bold is not applied. Use export_ad_pdf for the PDF.\n"
+		"When the user attaches a photo or scan of a printed notice: first read it and write out the complete transcription in your reply, "
+		"keeping the paragraph structure, in Unicode Devanagari for Hindi, copying every spelling, number, date and punctuation mark exactly as "
+		"printed (do not correct or modernise anything), and mark any word you cannot read with [?]. Name the kind of notice and the template you "
+		"would use. Then STOP and ask the user to check the transcription and confirm; it is a legal text and the operator must approve it. "
+		"Only after the user confirms (or sends corrections) build the ad.\n"
 		"If the user wants an ad that none of these functions covers (a display ad with images, for example), say so instead of improvising a layout.\n"
 		"After a script succeeds, say in one or two sentences what you did.";
 
@@ -404,11 +411,35 @@ void AgentController::rebuildClient()
 		});
 }
 
-void AgentController::sendPrompt(const QString& text)
+void AgentController::sendPrompt(const QString& text, const QStringList& imagePaths)
 {
-	if (d->busy || !d->client || text.trimmed().isEmpty())
+	if (d->busy || !d->client || (text.trimmed().isEmpty() && imagePaths.isEmpty()))
 		return;
-	d->conversation.addUser(text);
+	if (imagePaths.isEmpty())
+	{
+		d->conversation.addUser(text);
+	}
+	else
+	{
+		QList<LLMQore::TurnContent> content;
+		content.append(LLMQore::TextContent{text});
+		for (const QString& path : imagePaths)
+		{
+			// Phone photos are several MB; models read text fine at about 2000 px, so shrink them before sending.
+			QImage image(path);
+			if (image.isNull())
+				continue;
+			constexpr int maxSide = 2000;
+			if (image.width() > maxSide || image.height() > maxSide)
+				image = image.scaled(maxSide, maxSide, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+			QByteArray bytes;
+			QBuffer buffer(&bytes);
+			buffer.open(QIODevice::WriteOnly);
+			image.convertToFormat(QImage::Format_RGB32).save(&buffer, "JPEG", 90);
+			content.append(LLMQore::ImageContent::fromBytes(bytes, QStringLiteral("image/jpeg")));
+		}
+		d->conversation.addUser(content);
+	}
 	d->turnHadOutput = false;
 	setBusy(true);
 	d->requestId = d->client->ask(d->conversation);
