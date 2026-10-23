@@ -32,6 +32,7 @@ to the COPYING file provided with the program.
 #include "iconmanager.h"
 #include "prefsmanager.h"
 #include "scribusapp.h"
+#include "ai/agentpalette.h"
 #include "ui/aligndistribute.h"
 #include "ui/bookmarkpalette.h"
 #include "ui/contentpalette.h"
@@ -65,6 +66,7 @@ DockManager::DockManager(QWidget *parent)
 
 void DockManager::setupDocks()
 {
+	agentPalette = new AgentPalette(this);
 	alignDistributePalette = new AlignDistributePalette();
 	bookPalette = new BookPalette(this);
 	contentPalette = new ContentPalette(this);
@@ -78,6 +80,7 @@ void DockManager::setupDocks()
 	undoPalette = new UndoPalette(this);
 
 	// Apply common configuration for each palette
+	configureDock(agentPalette);
 	configureDock(alignDistributePalette);
 	configureDock(bookPalette);
 	configureDock(contentPalette);
@@ -277,6 +280,7 @@ void DockManager::createDefaultWorkspace()
 	// Right Panel
 	auto *areaRight = addDockWidget(RightDockWidgetArea, propertiesPalette, areaCenter);
 	addDockWidget(CenterDockWidgetArea, contentPalette, areaRight);
+	addDockWidget(CenterDockWidgetArea, agentPalette, areaRight);
 
 	// Top Panel
 	//    auto * areaTop = addDockWidget(TopDockWidgetArea, dockToolProperties);
@@ -294,6 +298,7 @@ void DockManager::createDefaultWorkspace()
 
 
 	// hide panels that are not visible in default workspace
+	agentPalette->closeDockWidget();
 	inlinePalette->closeDockWidget();
 	scrapbookPalette->closeDockWidget();
 	bookPalette->closeDockWidget();

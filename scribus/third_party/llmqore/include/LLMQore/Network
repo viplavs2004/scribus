@@ -1,0 +1,14 @@
+// Copyright (C) 2026 Petr Mironychev
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
+#include <LLMQore/HttpClient.hpp>
+#include <LLMQore/HttpResponse.hpp>
+#include <LLMQore/HttpStream.hpp>
+#include <LLMQore/HttpTransport.hpp>
+#include <LLMQore/HttpTransportError.hpp>
+#include <LLMQore/RpcLineFramer.hpp>
+#include <LLMQore/RequestMode.hpp>
+#include <LLMQore/SSEEvent.hpp>
+#include <LLMQore/SSEParser.hpp>

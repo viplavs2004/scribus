@@ -1,0 +1,87 @@
+// Copyright (C) 2026 Petr Mironychev
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
+#include <memory>
+
+#include <QHash>
+#include <QString>
+#include <QUrl>
+
+#include <LLMQore/LLMQore_global.h>
+#include <LLMQore/RpcTransport.hpp>
+
+namespace LLMQore {
+class HttpTransport;
+}
+
+namespace LLMQore::Mcp {
+
+enum class McpHttpSpec {
+    V2024_11_05,
+    V2025_03_26,
+    Latest = V2025_03_26,
+};
+
+struct LLMQORE_EXPORT HttpTransportConfig
+{
+    QUrl endpoint;
+    McpHttpSpec spec = McpHttpSpec::Latest;
+    QHash<QString, QString> headers;
+    int requestTimeoutMs = 120000;
+    int sseIdleTimeoutMs = 300000;
+};
+
+class LLMQORE_EXPORT McpStreamableHttpTransport : public Rpc::Transport
+{
+    Q_OBJECT
+public:
+    explicit McpStreamableHttpTransport(
+        HttpTransportConfig config,
+        LLMQore::HttpTransport *transport = nullptr,
+        QObject *parent = nullptr);
+    ~McpStreamableHttpTransport() override;
+
+    void start() override;
+    void stop() override;
+    bool isOpen() const override;
+    void send(const QJsonObject &message) override;
+    void abandon(const QString &requestId) override;
+
+    [[nodiscard]] const HttpTransportConfig &config() const;
+    [[nodiscard]] QString sessionId() const;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> m_impl;
+};
+
+class LLMQORE_EXPORT McpSseHttpTransport : public Rpc::Transport
+{
+    Q_OBJECT
+public:
+    explicit McpSseHttpTransport(
+        HttpTransportConfig config,
+        LLMQore::HttpTransport *transport = nullptr,
+        QObject *parent = nullptr);
+    ~McpSseHttpTransport() override;
+
+    void start() override;
+    void stop() override;
+    bool isOpen() const override;
+    void send(const QJsonObject &message) override;
+
+    [[nodiscard]] const HttpTransportConfig &config() const;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> m_impl;
+};
+
+[[nodiscard]] LLMQORE_EXPORT Rpc::Transport *makeHttpTransport(
+    HttpTransportConfig config,
+    LLMQore::HttpTransport *transport = nullptr,
+    QObject *parent = nullptr);
+
+} // namespace LLMQore::Mcp

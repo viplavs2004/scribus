@@ -11,13 +11,18 @@ for which a new license (GPL+exception) is in place.
 #include <QApplication>
 #include <QByteArray>
 #include <QGlobalStatic>
+#include <QHash>
 #include <QMessageBox>
 #include <QPixmap>
+#include <QSet>
 #include <QString>
 #include <QStringList>
+#include <QDir>
+#include <QTemporaryFile>
 #include <QWidget>
 
 #include "cmdutil.h"
+#include "pageitem.h"
 #include "pconsole.h"
 #include "prefscontext.h"
 #include "prefsfile.h"
@@ -31,6 +36,8 @@ for which a new license (GPL+exception) is in place.
 #include "scribusdoc.h"
 #include "scribusview.h"
 #include "selection.h"
+#include "undomanager.h"
+#include "agent_helpers_py.h"
 #include "ui/contentpalette.h" //TODO Move the calls to this to a signal
 #include "ui/helpbrowser.h"
 #include "ui/layers.h" //TODO Move the calls to this to a signal
@@ -44,6 +51,8 @@ for which a new license (GPL+exception) is in place.
 
 ScripterCore::ScripterCore(QWidget* parent)
 {
+	// Lets the AI agent (in the main application) find this object without linking to the plugin.
+	qApp->setProperty("scribusScripterCore", QVariant::fromValue<QObject*>(this));
 	m_pyConsole = new PythonConsole(parent);
 	returnString = "init";
 
@@ -76,6 +85,7 @@ ScripterCore::ScripterCore(QWidget* parent)
 
 ScripterCore::~ScripterCore()
 {
+	qApp->setProperty("scribusScripterCore", QVariant());
 	savePlugPrefs();
 	delete m_pyConsole;
 }
@@ -467,6 +477,270 @@ void ScripterCore::slotRunScript(const QString& Script)
 	ScCore->primaryMainWindow()->setScriptRunning(false);
 
 	enableMainWindowMenu();
+}
+
+namespace
+{
+	// Text of every text frame together with the font of its first character.
+	// Comparing this before and after a script finds the frames the script created or changed.
+	QHash<QString, QString> agentTextSignatures(ScribusDoc* doc)
+	{
+		QHash<QString, QString> signatures;
+		if (!doc)
+			return signatures;
+		for (PageItem* item : std::as_const(doc->DocItems))
+		{
+			if (!item || !item->isTextFrame())
+				continue;
+			QString font;
+			if (item->itemText.length() > 0)
+				font = item->itemText.charStyle(0).font().scName();
+			signatures.insert(item->itemName(), item->itemText.plainText() + QChar(0x1F) + font);
+		}
+		return signatures;
+	}
+
+	// Spaces, control and format characters (zero-width joiners...) are not drawn, so they need no glyph.
+	bool agentCharNeedsGlyph(QChar ch)
+	{
+		switch (ch.category())
+		{
+		case QChar::Separator_Space:
+		case QChar::Separator_Line:
+		case QChar::Separator_Paragraph:
+		case QChar::Other_Control:
+		case QChar::Other_Format:
+			return false;
+		default:
+			return true;
+		}
+	}
+
+	/**
+	 * Font-coverage check. For every text frame the script created or changed, looks for
+	 * characters the frame's font cannot draw (Scribus would show empty boxes, for example
+	 * Hindi text set in Arial). Returns a warning for the model, with installed fonts that do
+	 * cover those characters, or an empty string when everything can be drawn.
+	 */
+	QString agentFontWarnings(ScribusDoc* doc, const QHash<QString, QString>& before)
+	{
+		if (!doc)
+			return QString();
+
+		QStringList problems;
+		QSet<QChar> allMissing;
+		for (PageItem* item : std::as_const(doc->DocItems))
+		{
+			if (!item || !item->isTextFrame())
+				continue;
+			const int length = item->itemText.length();
+			QString firstFont;
+			if (length > 0)
+				firstFont = item->itemText.charStyle(0).font().scName();
+			const QString signature = item->itemText.plainText() + QChar(0x1F) + firstFont;
+			if (before.value(item->itemName()) == signature)
+				continue;
+
+			QString missing;
+			QString missingFont;
+			for (int i = 0; i < length; ++i)
+			{
+				const QChar ch = item->itemText.text(i);
+				if (!agentCharNeedsGlyph(ch))
+					continue;
+				const ScFace& face = item->itemText.charStyle(i).font();
+				if (face.canRender(ch))
+					continue;
+				if (!missing.contains(ch))
+					missing += ch;
+				missingFont = face.scName();
+			}
+			if (missing.isEmpty())
+				continue;
+			for (QChar c : std::as_const(missing))
+				allMissing.insert(c);
+			problems << QStringLiteral("text frame '%1' uses the font '%2', which has no glyphs for: %3")
+				.arg(item->itemName(), missingFont, missing.left(20));
+		}
+		if (problems.isEmpty())
+			return QString();
+
+		// Suggest installed fonts that can draw every missing character.
+		QStringList suggestions;
+		SCFontsIterator it(PrefsManager::instance().appPrefs.fontPrefs.AvailFonts);
+		for (; it.hasNext() && suggestions.size() < 6; it.next())
+		{
+			if (!it.current().usable())
+				continue;
+			bool coversAll = true;
+			for (QChar c : std::as_const(allMissing))
+			{
+				if (!it.current().canRender(c))
+				{
+					coversAll = false;
+					break;
+				}
+			}
+			if (coversAll)
+				suggestions << it.currentKey();
+		}
+
+		QString text = QStringLiteral("WARNING: ") + problems.join(QStringLiteral("; "))
+			+ QStringLiteral(". These characters would show as empty boxes. ");
+		if (problems.join(QString()).contains(QStringLiteral("ruti")))
+			text += QStringLiteral("Kruti Dev is a legacy font that cannot show Unicode text: do not call setFont() with it. "
+			                       "Call use_kruti_dev(frame_name) to convert the frame's Hindi text and set the font. ");
+		if (suggestions.isEmpty())
+			text += QStringLiteral("No installed font covers them.");
+		else
+			text += QStringLiteral("Fonts that can draw them: ") + suggestions.join(QStringLiteral(", "))
+				+ QStringLiteral(". Call setFont() with one of these exact names on the frame.");
+		return text;
+	}
+}
+
+/**
+ * Runs a script on behalf of the AI agent. Unlike slotRunScriptFile() this never shows a
+ * dialog: output and errors are captured and returned to the caller.
+ *
+ * Must be called on the GUI thread. The whole run is one undo step.
+ *
+ * Returned map: ok (bool), output (QString), error (QString, a Python traceback or a message).
+ */
+QVariantMap ScripterCore::runAgentScript(const QString& script)
+{
+	QVariantMap result;
+	result["ok"] = false;
+	result["output"] = QString();
+	result["error"] = QString();
+
+	ScribusMainWindow* mainWin = ScCore->primaryMainWindow();
+	// Prevent two scripts to be run concurrently or face crash!
+	if (mainWin->scriptIsRunning())
+	{
+		result["error"] = tr("Another script is already running.");
+		return result;
+	}
+
+	// The script goes through a file: no escaping, and tracebacks carry line numbers.
+	QTemporaryFile scriptFile(QDir::tempPath() + "/scribus-agent-XXXXXX.py");
+	if (!scriptFile.open())
+	{
+		result["error"] = tr("Could not create a temporary script file.");
+		return result;
+	}
+	scriptFile.write(script.toUtf8());
+	scriptFile.close(); // Python must be able to open it (Windows file sharing)
+
+	QTemporaryFile helpersFile(QDir::tempPath() + "/scribus-agent-helpers-XXXXXX.py");
+	if (!helpersFile.open())
+	{
+		result["error"] = tr("Could not create a temporary script file.");
+		return result;
+	}
+	helpersFile.write(kAgentHelpersSource);
+	helpersFile.close();
+
+	const QHash<QString, QString> textBefore = agentTextSignatures(mainWin->HaveDoc ? mainWin->doc : nullptr);
+
+	UndoTransaction undoTransaction;
+	if (mainWin->HaveDoc && UndoManager::undoEnabled())
+		undoTransaction = UndoManager::instance()->beginTransaction(mainWin->doc->getUName(), nullptr, tr("AI Agent action"), QString(), Um::IDocument);
+
+	disableMainWindowMenu();
+	mainWin->propertiesPalette->unsetDoc();
+	mainWin->contentPalette->unsetDoc();
+	mainWin->pagePalette->setView(nullptr);
+	mainWin->setScriptRunning(true);
+	QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+
+	// Same isolation as scripts started from the Script menu: a fresh sub-interpreter.
+	PyThreadState* globalState = PyThreadState_Get();
+	PyThreadState* state = Py_NewInterpreter();
+
+	QString output;
+	QString errorText;
+	PyObject* mainModule = PyImport_AddModule("__main__");
+	if (mainModule == nullptr)
+	{
+		errorText = tr("Failed to get the Python __main__ module.");
+	}
+	else
+	{
+		const QString escapedPath = QDir::toNativeSeparators(scriptFile.fileName()).replace("\\", "\\\\");
+		const QString escapedHelpersPath = QDir::toNativeSeparators(helpersFile.fileName()).replace("\\", "\\\\");
+		QString cm;
+		cm += "import sys\n";
+		cm += "import io\n";
+		cm += "import os\n";
+		cm += "os.environ['PAGER'] = '/bin/false'\n";
+		cm += "sys.stdin = io.StringIO()\n";
+		cm += "_agent_out = io.StringIO()\n";
+		cm += "sys.stdout = _agent_out\n";
+		cm += "sys.stderr = _agent_out\n";
+		cm += "import scribus\n";
+		cm += "scribus.mainInterpreter = False\n";
+		cm += "_agent_error = ''\n";
+		cm += "_agent_ns = {'__name__': '__main__'}\n";
+		cm += "try:\n";
+		// the helpers (Kruti Dev conversion...) are in scope for the agent's script
+		cm += QString("    exec(compile(open(\"%1\", \"rb\").read(), \"agent_helpers.py\", \"exec\"), _agent_ns)\n").arg(escapedHelpersPath);
+		cm += QString("    exec(compile(open(\"%1\", \"rb\").read(), \"agent_script.py\", \"exec\"), _agent_ns)\n").arg(escapedPath);
+		cm += "except SystemExit:\n";
+		cm += "    pass\n";
+		cm += "except BaseException:\n";
+		cm += "    import traceback\n";
+		cm += "    _agent_error = traceback.format_exc()\n";
+		cm += "sys.stdout = sys.__stdout__\n";
+		cm += "sys.stderr = sys.__stderr__\n";
+		cm += "_agent_text = _agent_out.getvalue()\n";
+
+		PyObject* globals = PyModule_GetDict(mainModule);
+		PyObject* runResult = PyRun_String(cm.toUtf8().data(), Py_file_input, globals, globals);
+		if (runResult == nullptr)
+		{
+			// The wrapper itself failed (it catches everything the script can raise).
+			PyErr_Clear();
+			errorText = tr("Internal error while running the script.");
+		}
+		Py_XDECREF(runResult);
+
+		if (PyObject* textObj = PyMapping_GetItemString(globals, "_agent_text"))
+		{
+			output = PyUnicode_asQString(textObj);
+			Py_DECREF(textObj);
+		}
+		if (PyObject* errObj = PyMapping_GetItemString(globals, "_agent_error"))
+		{
+			const QString tb = PyUnicode_asQString(errObj);
+			if (!tb.isEmpty())
+				errorText = tb;
+			Py_DECREF(errObj);
+		}
+		PyErr_Clear();
+	}
+
+	Py_EndInterpreter(state);
+	PyThreadState_Swap(globalState);
+	QApplication::restoreOverrideCursor();
+	mainWin->setScriptRunning(false);
+	enableMainWindowMenu();
+	finishScriptRun();
+
+	if (mainWin->HaveDoc)
+	{
+		const QString fontWarnings = agentFontWarnings(mainWin->doc, textBefore);
+		if (!fontWarnings.isEmpty())
+			output += (output.isEmpty() || output.endsWith('\n') ? QString() : QStringLiteral("\n")) + fontWarnings + QStringLiteral("\n");
+	}
+
+	if (undoTransaction)
+		undoTransaction.commit();
+
+	result["ok"] = errorText.isEmpty();
+	result["output"] = output;
+	result["error"] = errorText;
+	return result;
 }
 
 void ScripterCore::slotInteractiveScript(bool visible)

@@ -100,6 +100,7 @@ for which a new license (GPL+exception) is in place.
 #include <utility>
 
 #include "actionmanager.h"
+#include "ai/agentpalette.h"
 #include "actionsearch.h"
 #include "api/api_application.h"
 #include "appmodehelper.h"
@@ -782,6 +783,10 @@ void ScribusMainWindow::initPalettes()
 	connect( scrapbookPalette, SIGNAL(scrapbookListChanged()), this, SLOT(rebuildScrapbookMenu()));
 	scrapbookPalette->installEventFilter(this);
 
+	// AI Agent
+	dockManager->agentPalette->setToggleViewAction(scrActions["toolsAgent"]);
+	dockManager->agentPalette->installEventFilter(this);
+
 	// Pages
 	pagePalette = dockManager->pagePalette;
 	pagePalette->setMainWindow(this);
@@ -1448,6 +1453,7 @@ void ScribusMainWindow::addDefaultWindowMenuItems()
 	scrMenuMgr->addMenuItemString("toolsScrapbook", "Windows");
 	scrMenuMgr->addMenuItemString("toolsSymbols", "Windows");
 	scrMenuMgr->addMenuItemString("toolsInline", "Windows");
+	scrMenuMgr->addMenuItemString("toolsAgent", "Windows");
 	scrMenuMgr->addMenuItemString("SEPARATOR", "Windows");
 	scrMenuMgr->addMenuItemString("toolsMeasurements", "Windows");
 	scrMenuMgr->addMenuItemString("toolsPreflightVerifier", "Windows");

@@ -1,0 +1,357 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7D1F4C2E-5B3A-4E8D-9A61-2C8B0E4F5A17}</ProjectGuid>
+    <RootNamespace>scribusllmqore</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="..\Scribus-build-rules.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\Scribus-build-props.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\Scribus-build-props.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\Scribus-build-props.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\Scribus-build-props.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>11.0.60610.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>..\..\..\..\Scribus-builds\Scribus-$(Configuration)-$(Platform)-$(PlatformToolset)\</OutDir>
+    <IntDir>..\..\..\..\Scribus-builds\Build-objs\$(Configuration)-$(Platform)-$(PlatformToolset)\$(TargetName)\</IntDir>
+    <TargetName>scribus-llmqore</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>..\..\..\..\Scribus-builds\Scribus-$(Configuration)-$(Platform)-$(PlatformToolset)\</OutDir>
+    <IntDir>..\..\..\..\Scribus-builds\Build-objs\$(Configuration)-$(Platform)-$(PlatformToolset)\$(TargetName)\</IntDir>
+    <TargetName>scribus-llmqore</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>..\..\..\..\Scribus-builds\Scribus-$(Configuration)-$(Platform)-$(PlatformToolset)\</OutDir>
+    <IntDir>..\..\..\..\Scribus-builds\Build-objs\$(Configuration)-$(Platform)-$(PlatformToolset)\$(TargetName)\</IntDir>
+    <TargetName>scribus-llmqore</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>..\..\..\..\Scribus-builds\Scribus-$(Configuration)-$(Platform)-$(PlatformToolset)\</OutDir>
+    <IntDir>..\..\..\..\Scribus-builds\Build-objs\$(Configuration)-$(Platform)-$(PlatformToolset)\$(TargetName)\</IntDir>
+    <TargetName>scribus-llmqore</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\..\scribus\third_party\llmqore\include;..\..\..\scribus\third_party\llmqore\source;$(QT6_DIR)\include\QtCore;$(QT6_DIR)\include\QtConcurrent;$(QT6_DIR)\include\QtNetwork;$(QT6_DIR)\include\QtGui;$(QT6_DIR)\include\QtNetwork;$(QT6_DIR)\include\QtXml;$(QT6_DIR)\include;$(BOOST_DIR);$(FREETYPE_INCLUDE_DIR);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_USE_MATH_DEFINES;QT_DLL;QT_GUI_LIB;QT_CORE_LIB;QT_THREAD_SUPPORT;LLMQORE_STATIC_LIB;LLMQORE_LIBRARY;QT_NETWORK_LIB;QT_CONCURRENT_LIB;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4005;4244;4251;4258;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus /utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Lib />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\..\scribus\third_party\llmqore\include;..\..\..\scribus\third_party\llmqore\source;$(QT6_DIR)\include\QtCore;$(QT6_DIR)\include\QtConcurrent;$(QT6_DIR)\include\QtNetwork;$(QT6_DIR)\include\QtGui;$(QT6_DIR)\include\QtNetwork;$(QT6_DIR)\include\QtXml;$(QT6_DIR)\include;$(BOOST_DIR);$(FREETYPE_INCLUDE_DIR);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_USE_MATH_DEFINES;QT_DLL;QT_GUI_LIB;QT_CORE_LIB;QT_THREAD_SUPPORT;LLMQORE_STATIC_LIB;LLMQORE_LIBRARY;QT_NETWORK_LIB;QT_CONCURRENT_LIB;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4005;4244;4251;4258;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus /utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Lib />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <OmitFramePointers>true</OmitFramePointers>
+      <AdditionalIncludeDirectories>..\..\..\scribus\third_party\llmqore\include;..\..\..\scribus\third_party\llmqore\source;$(QT6_DIR)\include\QtCore;$(QT6_DIR)\include\QtConcurrent;$(QT6_DIR)\include\QtNetwork;$(QT6_DIR)\include\QtGui;$(QT6_DIR)\include\QtNetwork;$(QT6_DIR)\include\QtXml;$(QT6_DIR)\include;$(BOOST_DIR);$(FREETYPE_INCLUDE_DIR);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_USE_MATH_DEFINES;QT_DLL;QT_GUI_LIB;QT_CORE_LIB;QT_THREAD_SUPPORT;LLMQORE_STATIC_LIB;LLMQORE_LIBRARY;QT_NETWORK_LIB;QT_CONCURRENT_LIB;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4005;4244;4251;4258;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus /utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Lib />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <OmitFramePointers>true</OmitFramePointers>
+      <AdditionalIncludeDirectories>..\..\..\scribus\third_party\llmqore\include;..\..\..\scribus\third_party\llmqore\source;$(QT6_DIR)\include\QtCore;$(QT6_DIR)\include\QtConcurrent;$(QT6_DIR)\include\QtNetwork;$(QT6_DIR)\include\QtGui;$(QT6_DIR)\include\QtNetwork;$(QT6_DIR)\include\QtXml;$(QT6_DIR)\include;$(BOOST_DIR);$(FREETYPE_INCLUDE_DIR);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_USE_MATH_DEFINES;QT_DLL;QT_GUI_LIB;QT_CORE_LIB;QT_THREAD_SUPPORT;LLMQORE_STATIC_LIB;LLMQORE_LIBRARY;QT_NETWORK_LIB;QT_CONCURRENT_LIB;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4005;4244;4251;4258;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus /utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Lib />
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\acp\AcpAgentConfig.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\acp\AcpAgentRegistry.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\acp\AcpClient.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\acp\AcpTypes.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\acp\DefaultFileSystemProvider.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\acp\TerminalManager.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\clients\claude\ClaudeClient.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\clients\claude\ClaudeMessage.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\clients\google\GoogleAIClient.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\clients\google\GoogleMessage.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\clients\llamacpp\LlamaCppClient.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\clients\ollama\OllamaClient.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\clients\ollama\OllamaMessage.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\clients\openai\OpenAIClient.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\clients\openai\OpenAIMessage.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\clients\openai\OpenAIResponsesClient.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\clients\openai\OpenAIResponsesMessage.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\core\BaseClient.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\core\BaseMessage.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\core\Conversation.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\core\Log.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\core\Usage.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\mcp\BasePromptProvider.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\mcp\BaseResourceProvider.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\mcp\DirectoryRootsProvider.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\mcp\McpClient.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\mcp\McpHttpServerTransport.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\mcp\McpProvisioning.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\mcp\McpRemoteTool.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\mcp\McpServer.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\mcp\McpSseHttpTransport.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\mcp\McpStdioServerTransport.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\mcp\McpStreamableHttpTransport.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\mcp\McpToolBinder.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\mcp\McpTypes.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\mcp\StaticResourceProvider.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\network\HttpClient.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\network\HttpRequestParser.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\network\HttpResponse.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\network\HttpStream.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\network\HttpTransport.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\network\HttpTransportError.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\network\SSEParser.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\rpc\JsonRpcSession.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\rpc\ProtocolPeer.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\rpc\RpcLineFramer.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\rpc\RpcNdJsonCodec.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\rpc\RpcPipeTransport.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\rpc\RpcStdioClientTransport.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\rpc\RpcTransport.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\tools\BaseTool.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\tools\ToolDialect.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\tools\ToolHandler.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\tools\ToolRegistry.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\tools\ToolResult.cpp" />
+    <ClCompile Include="..\..\..\scribus\third_party\llmqore\source\tools\ToolsManager.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\AcpAgentConfig.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\AcpAgentRegistry.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\AcpClient.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\AcpFileSystemProvider.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\AcpPermissionProvider.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\AcpTerminalProvider.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\AcpTypes.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\BaseClient.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\BaseElicitationProvider.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\BaseMessage.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\BasePromptProvider.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\BaseResourceProvider.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\BaseRootsProvider.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\BaseTool.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\CallbackElicitationProvider.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\CallbackPermissionProvider.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\ClaudeClient.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\ContentBlocks.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\Conversation.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\DefaultFileSystemProvider.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\DirectoryRootsProvider.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\FutureUtils.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\GoogleAIClient.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\HttpClient.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\HttpRequestParser.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\HttpResponse.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\HttpStream.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\HttpTransport.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\HttpTransportError.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\JsonFields.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\JsonRpcSession.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\LLMQore_global.h" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\LlamaCppClient.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\Log.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\McpClient.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\McpHttpServerTransport.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\McpHttpTransport.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\McpProvisioning.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\McpRemoteTool.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\McpServer.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\McpStdioServerTransport.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\McpToolBinder.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\McpTypes.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\OllamaClient.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\OpenAIClient.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\OpenAIResponsesClient.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\ProtocolPeer.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\RequestMode.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\RpcExceptions.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\RpcLineFramer.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\RpcNdJsonCodec.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\RpcPipeTransport.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\RpcStdioTransport.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\RpcTransport.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\SSEEvent.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\SSEParser.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\StaticResourceProvider.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\TerminalManager.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\ToolDialect.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\ToolExceptions.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\ToolRegistry.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\ToolResult.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\ToolsManager.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\UsageSchema.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\Version.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\source\acp\AcpTypeSchema.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\source\clients\claude\ClaudeMessage.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\source\clients\google\GoogleMessage.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\source\clients\ollama\OllamaMessage.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\source\clients\openai\OpenAIErrorAnnotations.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\source\clients\openai\OpenAIMessage.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\source\clients\openai\OpenAIResponsesMessage.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\source\core\ErrorEnvelope.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\source\core\ThreadAffinity.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\source\core\Usage.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\source\mcp\McpHttpCommon.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\source\mcp\McpTypeSchema.hpp" />
+    <ClInclude Include="..\..\..\scribus\third_party\llmqore\source\tools\ToolHandler.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\AcpClient.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\AcpFileSystemProvider.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\AcpPermissionProvider.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\AcpTerminalProvider.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\BaseClient.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\BaseElicitationProvider.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\BaseMessage.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\BasePromptProvider.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\BaseResourceProvider.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\BaseRootsProvider.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\BaseTool.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\CallbackElicitationProvider.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\CallbackPermissionProvider.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\ClaudeClient.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\DefaultFileSystemProvider.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\DirectoryRootsProvider.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\GoogleAIClient.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\HttpClient.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\HttpStream.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\HttpTransport.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\JsonRpcSession.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\LlamaCppClient.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\McpClient.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\McpHttpServerTransport.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\McpHttpTransport.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\McpRemoteTool.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\McpServer.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\McpStdioServerTransport.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\McpToolBinder.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\OllamaClient.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\OpenAIClient.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\OpenAIResponsesClient.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\ProtocolPeer.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\RpcPipeTransport.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\RpcStdioTransport.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\RpcTransport.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\StaticResourceProvider.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\TerminalManager.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\ToolRegistry.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\include\LLMQore\ToolsManager.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\source\clients\claude\ClaudeMessage.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\source\clients\google\GoogleMessage.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\source\clients\ollama\OllamaMessage.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\source\clients\openai\OpenAIMessage.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\source\clients\openai\OpenAIResponsesMessage.hpp" />
+    <moc Include="..\..\..\scribus\third_party\llmqore\source\tools\ToolHandler.hpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\Scribus-build-rules.targets" />
+  </ImportGroup>
+</Project>

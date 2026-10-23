@@ -33,6 +33,7 @@ to the COPYING file provided with the program.
 using namespace ads;
 
 class ScribusMainWindow;
+class AgentPalette;
 class PagePalette;
 class OutlinePalette;
 class PropertiesPalette;
@@ -84,6 +85,7 @@ public:
 	 */
 	CDockAreaWidget *addDockFromPlugin(CDockWidget *dock, bool closed = true);
 
+	AgentPalette *agentPalette {nullptr};
 	PagePalette *pagePalette {nullptr};
 	OutlinePalette *outlinePalette {nullptr};
 	PropertiesPalette *propertiesPalette {nullptr};

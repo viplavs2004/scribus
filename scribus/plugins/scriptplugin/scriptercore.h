@@ -11,6 +11,7 @@ for which a new license (GPL+exception) is in place.
 
 #include "qmap.h"
 #include "qpointer.h"
+#include <QVariantMap>
 #include "scriptpaths.h"
 
 class ScrAction;
@@ -46,6 +47,8 @@ public slots:
 	void slotRunScriptFile(const QString& fileName, QStringList arguments, bool inMainInterpreter = false);
 	void slotRunPythonScript(); // needed for running python script from CLI
 	void slotRunScript(const QString& script);
+	/** @brief Runs a script for the AI agent, capturing output and errors (no dialogs). GUI thread only. */
+	QVariantMap runAgentScript(const QString& script);
 	void slotInteractiveScript(bool);
 	void slotExecute();
 	/*! \brief Show docstring of the script to the user.

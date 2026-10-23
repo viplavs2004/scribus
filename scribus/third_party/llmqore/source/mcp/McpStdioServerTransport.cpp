@@ -1,0 +1,300 @@
+// Copyright (C) 2026 Petr Mironychev
+// SPDX-License-Identifier: MIT
+
+#include <LLMQore/McpStdioServerTransport.hpp>
+
+#include <LLMQore/Log.hpp>
+
+#include <LLMQore/RpcNdJsonCodec.hpp>
+
+#include <QDateTime>
+#include <QFile>
+#include <QIODevice>
+#include <QJsonDocument>
+#include <QMetaObject>
+#include <QMutex>
+#include <QMutexLocker>
+#include <QPointer>
+#include <QThread>
+
+#include <cstdio>
+
+#ifdef Q_OS_WIN
+#include <fcntl.h>
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+
+namespace LLMQore::Mcp {
+
+namespace {
+
+class StdioTrace
+{
+public:
+    StdioTrace()
+    {
+        const QByteArray path = qgetenv("LLMQORE_MCP_TRACE");
+        if (path.isEmpty())
+            return;
+        m_file.setFileName(QString::fromLocal8Bit(path));
+        if (!m_file.open(QIODevice::Append | QIODevice::WriteOnly | QIODevice::Text)) {
+            return;
+        }
+        note(QStringLiteral("--- stdio server transport trace opened ---"));
+    }
+
+    bool isEnabled() const { return m_file.isOpen(); }
+
+    void log(const QString &direction, const QByteArray &payload)
+    {
+        if (!m_file.isOpen())
+            return;
+        QMutexLocker locker(&m_mutex);
+        const QByteArray prefix
+            = QDateTime::currentDateTimeUtc().toString("yyyy-MM-ddTHH:mm:ss.zzz").toUtf8() + " ["
+              + direction.toUtf8() + "] ";
+        m_file.write(prefix);
+        m_file.write(payload);
+        if (!payload.endsWith('\n'))
+            m_file.write("\n", 1);
+        m_file.flush();
+    }
+
+    void note(const QString &message)
+    {
+        log(QStringLiteral("NOTE"), message.toUtf8());
+    }
+
+private:
+    QFile m_file;
+    QMutex m_mutex;
+};
+
+std::shared_ptr<StdioTrace> sharedTrace()
+{
+    static QMutex mutex;
+    static std::weak_ptr<StdioTrace> cache;
+    QMutexLocker locker(&mutex);
+    auto trace = cache.lock();
+    if (!trace) {
+        trace = std::make_shared<StdioTrace>();
+        cache = trace;
+    }
+    return trace;
+}
+
+class StdinReaderThread : public QThread
+{
+public:
+    StdinReaderThread(McpStdioServerTransport *owner, std::shared_ptr<StdioTrace> trace)
+        : m_owner(owner)
+        , m_trace(std::move(trace))
+    {}
+
+    void stopReading()
+    {
+        m_stop.storeRelease(1);
+        QMutexLocker lock(&m_ownerMutex);
+        m_owner.clear();
+    }
+
+protected:
+    void run() override
+    {
+        m_trace->note(QStringLiteral("reader thread started"));
+        Rpc::NdJsonCodec codec;
+        char buf[4096];
+#ifdef Q_OS_WIN
+        const int fd = _fileno(stdin);
+#else
+        const int fd = fileno(stdin);
+#endif
+        while (m_stop.loadAcquire() == 0) {
+#ifdef Q_OS_WIN
+            const int n = _read(fd, buf, static_cast<unsigned>(sizeof(buf)));
+#else
+            const ssize_t n = ::read(fd, buf, sizeof(buf));
+#endif
+            if (n == 0) {
+                m_trace->note(QStringLiteral("stdin EOF"));
+                break;
+            }
+            if (n < 0) {
+                m_trace->note(QStringLiteral("stdin read error"));
+                break;
+            }
+            const QByteArray chunk(buf, static_cast<int>(n));
+            if (m_trace->isEnabled())
+                m_trace->log(QStringLiteral("RAW<"), chunk);
+            const QList<QJsonObject> messages = codec.decode(chunk);
+            for (QJsonObject message : messages) {
+                if (m_trace->isEnabled())
+                    m_trace->log(
+                        QStringLiteral("IN <"),
+                        QJsonDocument(message).toJson(QJsonDocument::Compact));
+                postToOwner("messageReceived", Q_ARG(QJsonObject, message));
+                if (m_stop.loadAcquire() != 0)
+                    break;
+            }
+        }
+        m_trace->note(QStringLiteral("reader thread exiting"));
+        postToOwner("closed");
+    }
+
+private:
+    template<typename... Args>
+    void postToOwner(const char *method, Args &&...args)
+    {
+        QMutexLocker lock(&m_ownerMutex);
+        if (!m_owner)
+            return;
+        QMetaObject::invokeMethod(
+            m_owner.data(), method, Qt::QueuedConnection, std::forward<Args>(args)...);
+    }
+
+    QPointer<McpStdioServerTransport> m_owner;
+    QMutex m_ownerMutex;
+    std::shared_ptr<StdioTrace> m_trace;
+    QAtomicInt m_stop{0};
+};
+
+} // namespace
+
+struct McpStdioServerTransport::Impl
+{
+    bool open = false;
+    QMutex writeMutex;
+    StdinReaderThread *reader = nullptr;
+    QIODevice *in = nullptr;
+    QIODevice *out = nullptr;
+    Rpc::NdJsonCodec codec;
+    std::shared_ptr<StdioTrace> trace;
+};
+
+McpStdioServerTransport::McpStdioServerTransport(QObject *parent)
+    : McpStdioServerTransport(nullptr, nullptr, parent)
+{}
+
+McpStdioServerTransport::McpStdioServerTransport(
+    QIODevice *input, QIODevice *output, QObject *parent)
+    : Rpc::Transport(parent)
+    , m_impl(std::make_unique<Impl>())
+{
+    m_impl->in = input;
+    m_impl->out = output;
+    m_impl->trace = sharedTrace();
+}
+
+McpStdioServerTransport::~McpStdioServerTransport()
+{
+    stop();
+}
+
+void McpStdioServerTransport::start()
+{
+    if (m_impl->open)
+        return;
+
+    if (m_impl->in) {
+        m_impl->trace->note(QStringLiteral("McpStdioServerTransport::start (injected devices)"));
+        m_impl->open = true;
+        connect(m_impl->in, &QIODevice::readyRead, this, [this]() { readFromDevice(); });
+        connect(m_impl->in, &QIODevice::readChannelFinished, this, [this]() {
+            readFromDevice();
+            m_impl->trace->note(QStringLiteral("input channel finished"));
+            m_impl->open = false;
+            disconnect(m_impl->in, nullptr, this, nullptr);
+            emit closed();
+        });
+        readFromDevice();
+        return;
+    }
+
+#ifdef Q_OS_WIN
+    _setmode(_fileno(stdin), _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif
+    std::setvbuf(stdout, nullptr, _IONBF, 0);
+    std::setvbuf(stdin, nullptr, _IONBF, 0);
+
+    m_impl->trace->note(QStringLiteral("McpStdioServerTransport::start"));
+
+    m_impl->open = true;
+
+    m_impl->reader = new StdinReaderThread(this, m_impl->trace);
+    m_impl->reader->start();
+}
+
+void McpStdioServerTransport::stop()
+{
+    if (!m_impl->open)
+        return;
+    m_impl->open = false;
+    if (m_impl->in)
+        disconnect(m_impl->in, nullptr, this, nullptr);
+    if (m_impl->reader) {
+        m_impl->reader->stopReading();
+        if (m_impl->reader->isRunning()) {
+            m_impl->reader->requestInterruption();
+            m_impl->reader->wait(200);
+        }
+        if (!m_impl->reader->isRunning()) {
+            m_impl->reader->deleteLater();
+        }
+        m_impl->reader = nullptr;
+    }
+    emit closed();
+}
+
+bool McpStdioServerTransport::isOpen() const
+{
+    return m_impl->open;
+}
+
+void McpStdioServerTransport::send(const QJsonObject &message)
+{
+    if (!m_impl->open)
+        return;
+    QString writeError;
+    {
+        QMutexLocker locker(&m_impl->writeMutex);
+        const QByteArray line = Rpc::NdJsonCodec::encode(message);
+        m_impl->trace->log(QStringLiteral("OUT>"), line);
+        if (m_impl->out) {
+            if (m_impl->out->write(line) != line.size()) {
+                writeError = m_impl->out->errorString();
+                if (writeError.isEmpty())
+                    writeError = QStringLiteral("Short write to output device");
+            }
+        } else {
+            std::fwrite(line.constData(), 1, static_cast<size_t>(line.size()), stdout);
+            std::fflush(stdout);
+        }
+    }
+    if (!writeError.isEmpty()) {
+        qCWarning(llmMcpLog).noquote()
+            << QString("Stdio server transport write failed: %1").arg(writeError);
+        emit errorOccurred(writeError);
+    }
+}
+
+void McpStdioServerTransport::readFromDevice()
+{
+    if (!m_impl->open || !m_impl->in)
+        return;
+    const QByteArray data = m_impl->in->readAll();
+    if (data.isEmpty())
+        return;
+    m_impl->trace->log(QStringLiteral("RAW<"), data);
+    const QList<QJsonObject> messages = m_impl->codec.decode(data);
+    for (const QJsonObject &message : messages) {
+        if (m_impl->trace->isEnabled())
+            m_impl->trace->log(
+                QStringLiteral("IN <"), QJsonDocument(message).toJson(QJsonDocument::Compact));
+        emit messageReceived(message);
+    }
+}
+
+} // namespace LLMQore::Mcp
