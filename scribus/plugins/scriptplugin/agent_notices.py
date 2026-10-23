@@ -390,6 +390,139 @@ def create_notice_ad(template, body, width_cm=None, height_cm=None, english_font
     return report
 
 
+def _put_paragraphs(frame, paragraphs, kruti, latin):
+    """Fill a frame with several paragraphs of mixed Hindi/English text; returns [(start, length)] per paragraph."""
+    import scribus
+    pieces, ranges, runs = [], [], []
+    pos = 0
+    for text in paragraphs:
+        converted_total = 0
+        for start, length, converted, is_kruti in kruti_segments(text):
+            if converted:
+                runs.append((pos + converted_total, len(converted), kruti if is_kruti else latin))
+            converted_total += len(converted)
+            pieces.append(converted)
+        ranges.append((pos, converted_total))
+        pos += converted_total + 1
+        pieces.append(chr(10))
+    scribus.setText(''.join(pieces[:-1]), frame)
+    for start, length, font in runs:
+        scribus.selectText(start, length, frame)
+        scribus.setFont(font, frame)
+    scribus.selectText(0, 0, frame)
+    return ranges
+
+
+COLUMN_ALIGNS = {'center': 'ALIGN_CENTERED', 'left': 'ALIGN_LEFT', 'right': 'ALIGN_RIGHT', 'justify': 'ALIGN_BLOCK'}
+
+
+def create_column_notice(paragraphs, width_cm=3.5, height_cm=10.5, english_font='Times New Roman',
+                         max_pt=8.0, min_pt=6.0, min_scale=0.60, border_width=0.8):
+    """Create a new document with a bordered notice for a narrow newspaper column (court and
+    tribunal notices, summons, legal notices) and return a report.
+
+    paragraphs   list of (text, align) or (text, align, size_factor). text is Unicode, Hindi and English
+                 mixed (converted to Kruti Dev here). align is 'center', 'left', 'right' or 'justify'.
+                 size_factor makes a paragraph larger than the body (a court heading is about 1.2).
+    width_cm, height_cm   the ad size (a column is 3.5 cm wide)
+    max_pt       the largest body size to try
+    min_pt       the smallest body size the fit may use (never below 5 pt)
+    min_scale    the narrowest horizontal scale the fit uses before it makes the type smaller
+
+    Bold and italic are not applied: Kruti Dev has no styled variants installed.
+    """
+    import scribus
+    if min_pt < ABSOLUTE_MIN_PT:
+        raise ValueError('Text smaller than %.0f pt cannot be read in a newspaper.' % ABSOLUTE_MIN_PT)
+    kruti = kruti_font_name()
+    if kruti is None:
+        raise ValueError('The font Kruti Dev 010 is not installed.')
+    latin = find_font(english_font)
+    if latin is None:
+        raise ValueError('The English font %r is not installed.' % english_font)
+    specs = []
+    for item in paragraphs:
+        text, align = item[0], item[1]
+        if align not in COLUMN_ALIGNS:
+            raise ValueError('align must be one of %s, not %r' % (', '.join(sorted(COLUMN_ALIGNS)), align))
+        specs.append((text, getattr(scribus, COLUMN_ALIGNS[align]), item[2] if len(item) > 2 else 1.0))
+    if not specs:
+        raise ValueError('No paragraphs given.')
+
+    page_w, page_h = width_cm * POINTS_PER_CM, height_cm * POINTS_PER_CM
+    report = {'size_cm': (width_cm, height_cm), 'warnings': []}
+    scribus.newDocument((page_w, page_h), (0, 0, 0, 0), scribus.PORTRAIT, 1, scribus.UNIT_POINTS,
+                        scribus.NOFACINGPAGES, scribus.FIRSTPAGERIGHT, 1)
+    inset = 2.0
+    border = scribus.createRect(inset, inset, page_w - 2 * inset, page_h - 2 * inset)
+    scribus.setFillColor('None', border)
+    scribus.setLineColor('Black', border)
+    scribus.setLineWidth(border_width, border)
+
+    pad = 2.5
+    frame = scribus.createText(inset + pad, inset + pad, (page_w - 2 * inset - 2 * pad) / JUSTIFY_OVERSHOOT,
+                               page_h - 2 * inset - 2 * pad)
+    ranges = _put_paragraphs(frame, [spec[0] for spec in specs], kruti, latin)
+
+    def apply(size, scale):
+        scribus.setTextScalingH(scale * 100.0, frame)
+        scribus.setLineSpacingMode(0, frame)
+        scribus.setTextColor('Black', frame)
+        scribus.setTextDistances(0, 0, 0, 0, frame)
+        for (start, length), (text, align, factor) in zip(ranges, specs):
+            if length == 0:
+                continue
+            scribus.selectText(start, length, frame)
+            scribus.setFontSize(size * factor, frame)
+            scribus.setLineSpacing(size * factor * 1.08, frame)
+            scribus.setTextAlignment(align, frame)
+        scribus.selectText(0, 0, frame)
+
+    def fits(size, scale):
+        apply(size, scale)
+        scribus.layoutTextChain(frame)
+        return not _overflows(frame)
+
+    chosen = None
+    size = max_pt
+    while size >= min_pt - 1e-6 and chosen is None:
+        if fits(size, 1.0):
+            chosen = (size, 1.0)
+        elif fits(size, min_scale):
+            low, high = min_scale, 1.0
+            while high - low > 0.002:
+                mid = (low + high) / 2.0
+                if fits(size, mid):
+                    low = mid
+                else:
+                    high = mid
+            fits(size, low)
+            chosen = (size, low)
+        size -= 0.5
+    if chosen is None:
+        low, high = 0.5, min_scale
+        if fits(min_pt, low):
+            while high - low > 0.002:
+                mid = (low + high) / 2.0
+                if fits(min_pt, mid):
+                    low = mid
+                else:
+                    high = mid
+            fits(min_pt, low)
+            chosen = (min_pt, low)
+            report['warnings'].append('The text only fits at %.1f pt squeezed to %d%%. Check that it is still readable.'
+                                      % (min_pt, round(low * 100)))
+    if chosen is None:
+        fits(min_pt, min_scale)
+        report['fits'] = False
+        report['warnings'].append('The text does not fit this ad size even at %.1f pt. Use a taller ad or shorten the text.' % min_pt)
+    else:
+        report['fits'] = True
+        report['body'] = {'size': chosen[0], 'scale': round(chosen[1], 3)}
+    report['frames'] = {'border': border, 'text': frame}
+    return report
+
+
 def export_ad_pdf(path, standard='x1a', profile=None, title='Notice ad'):
     """Export the open ad as PDF. standard: 'plain', 'x1a', 'x3' or 'x4' (PDF/X-1a, X-3, X-4)."""
     import os

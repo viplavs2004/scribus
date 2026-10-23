@@ -76,7 +76,13 @@ namespace
 		"condensed, and every entry of report['warnings']. Do not set font sizes or fonts yourself for these ads.\n"
 		"- export_ad_pdf(file_name, standard='x1a') writes the PDF. standard is 'x1a', 'x3' or 'x4' for PDF/X (preferred by the press) or 'plain'. "
 		"A bare file name goes to the user's output folder. Use PDF/X unless the user asks for a plain PDF.\n"
-		"If the user wants an ad for which there is no template, say so instead of improvising a layout.\n"
+		"- create_column_notice(paragraphs, width_cm=3.5, height_cm=10.5, english_font='Times New Roman') makes a bordered notice for a narrow "
+		"column: court, tribunal, consumer commission or revenue-court notices, summons and similar legal notices with no logo. paragraphs is a "
+		"list of (text, align) or (text, align, size_factor) with align 'center', 'left', 'right' or 'justify'. Court name and case-number lines "
+		"are centred with size_factor about 1.2; party names and the body are 'justify'; labels such as COMPLAINANTS and the signature lines are "
+		"'right'. Copy the text exactly as in the client's document, one paragraph per printed paragraph. The size and the condensing are fitted "
+		"for you (report as for create_notice_ad). Bold is not applied. Use export_ad_pdf for the PDF.\n"
+		"If the user wants an ad that none of these functions covers (a display ad with images, for example), say so instead of improvising a layout.\n"
 		"After a script succeeds, say in one or two sentences what you did.";
 
 
