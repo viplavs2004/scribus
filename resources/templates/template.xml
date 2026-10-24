@@ -672,4 +672,32 @@
 		<author>vectorportal.com</author>
 		<email></email>
 	</template>
+	<template category="Newspaper Ads">
+		<name>Greater Noida Authority notice</name>
+		<file>news_gn_notice/news_gn_notice.sla.gz</file>
+		<tnail>news_gn_notice/news_gn_noticetn.png</tnail>
+		<img>news_gn_notice/news_gn_notice.png</img>
+		<psize>custom, 193x184</psize>
+		<color>CMYK, black only</color>
+		<descr>Public notice of the Greater Noida Authority, 6.8 x 6.5 cm, with border, logo, heading, justified body and signature. Hindi in Kruti Dev 010, English in Times New Roman.</descr>
+		<usage>Click into a text frame and change the text. Hindi must be typed with the Kruti Dev keyboard layout. Do not make the text smaller than 5 pt. Export with File, Export, Save as PDF (PDF/X-1a).</usage>
+		<scribus_version>1.7.4.svn</scribus_version>
+		<date>2026-10-24</date>
+		<author>Scribus AI agent</author>
+		<email></email>
+	</template>
+	<template category="Newspaper Ads">
+		<name>Court notice, single column</name>
+		<file>news_court_column/news_court_column.sla.gz</file>
+		<tnail>news_court_column/news_court_columntn.png</tnail>
+		<img>news_court_column/news_court_column.png</img>
+		<psize>custom, 99x298</psize>
+		<color>CMYK, black only</color>
+		<descr>Court, tribunal or consumer-commission notice for one newspaper column, 3.5 x 10.5 cm, with border. Hindi in Kruti Dev 010, English in Times New Roman.</descr>
+		<usage>Click into the text frame and replace the text. Hindi must be typed with the Kruti Dev keyboard layout. Do not make the text smaller than 5 pt.</usage>
+		<scribus_version>1.7.4.svn</scribus_version>
+		<date>2026-10-24</date>
+		<author>Scribus AI agent</author>
+		<email></email>
+	</template>
 </templates>

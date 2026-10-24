@@ -129,6 +129,13 @@ cover5/cover5.sla.gz
 )
 
 install(FILES
+news_gn_notice/greater_noida_flat.png
+news_gn_notice/news_gn_notice.png
+news_gn_notice/news_gn_noticetn.png
+news_gn_notice/news_gn_notice.sla.gz
+news_court_column/news_court_column.png
+news_court_column/news_court_columntn.png
+news_court_column/news_court_column.sla.gz
 buscard1/Business_Card_1.png
 buscard1/Business_Card_1tn.png
 buscard1/buscard1.sla.gz
