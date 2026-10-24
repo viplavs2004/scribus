@@ -49,6 +49,10 @@ public slots:
 	void slotRunScript(const QString& script);
 	/** @brief Runs a script for the AI agent, capturing output and errors (no dialogs). GUI thread only. */
 	QVariantMap runAgentScript(const QString& script);
+	/** @brief Tries a script for the AI agent on a throw-away copy of the open document (or in a scratch
+	 * document the script creates itself), checks and renders the result, then discards everything.
+	 * The user's documents are not touched. Returned map: ok, output, error, preview (path of a PNG, may be empty). */
+	QVariantMap runAgentSandbox(const QString& script, const QString& previewPath);
 	void slotInteractiveScript(bool);
 	void slotExecute();
 	/*! \brief Show docstring of the script to the user.

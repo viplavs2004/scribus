@@ -52,6 +52,7 @@ private slots:
 	void onAssistantChunk(const QString& chunk);
 	void onApprovalRequested(const QString& summary, const QString& code);
 	void onScriptFinished(const QString& summary, bool ok, const QString& resultText);
+	void onScriptTested(const QString& summary, bool ok, const QString& resultText, const QString& previewPath);
 	void approveClicked();
 	void rejectClicked();
 	void onTurnFinished();
@@ -86,12 +87,14 @@ private:
 
 	QWidget* m_approvalBar {nullptr};
 	QLabel* m_approvalSummary {nullptr};
+	QLabel* m_approvalPreview {nullptr};
 	QPlainTextEdit* m_approvalCode {nullptr};
 	QCheckBox* m_approvalAlways {nullptr};
 	QPushButton* m_approveButton {nullptr};
 	QPushButton* m_rejectButton {nullptr};
 
 	bool m_assistantOpen {false};
+	int m_testCount {0};
 	bool m_newBlockBeforeText {false};
 };
 

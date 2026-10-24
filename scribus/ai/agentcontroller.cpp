@@ -5,7 +5,9 @@ to the COPYING file provided with the program.
 #include "agentcontroller.h"
 
 #include <QBuffer>
+#include <QCoreApplication>
 #include <QDateTime>
+#include <QDir>
 #include <QImage>
 #include <QFile>
 #include <QFuture>
@@ -14,6 +16,7 @@ to the COPYING file provided with the program.
 #include <QPointer>
 #include <QPromise>
 #include <QTextStream>
+#include <QTimer>
 
 #include <LLMQore/BaseTool.hpp>
 #include <LLMQore/Clients>
@@ -26,9 +29,25 @@ namespace
 		"working directly on the document the user has open.\n"
 		"Always reply in the language the user writes in (English, Hindi or Hinglish) and keep replies short.\n"
 		"\n"
-		"To look at or change anything, call the run_python tool with a Python script. "
-		"The script runs inside Scribus and can use the scribus module (from scribus import *).\n"
-		"Rules for scripts:\n"
+		"HOW YOU WORK (follow this every time you build or change something):\n"
+		"1. You have two tools. test_script runs a Python script on a THROW-AWAY COPY of the user's document (or in scratch documents the script "
+		"creates). It never changes the user's work and needs no permission. It returns the script's output, a verification report and, with some "
+		"providers, a preview image. run_python runs a script on the user's REAL document; the user must approve it.\n"
+		"2. Look first: use test_script to inspect what the document contains before you change it.\n"
+		"3. Develop in the scratch copy. Write the script, call test_script, and READ the result carefully: the printed output, every line of the "
+		"verification report, every PROBLEMS FOUND entry and the preview. Compare it with what the user asked for (text, sizes, fonts, positions, "
+		"counts, nothing cut off, nothing under 5 pt). If anything is wrong or missing, say briefly what is wrong, fix the script and call "
+		"test_script again. Repeat until the result is correct and complete. Do not stop at the first run that merely did not crash, and do not "
+		"ask the user to run anything while it is still wrong. If after about eight attempts you cannot get it right, stop and tell the user "
+		"exactly what is not working.\n"
+		"4. Only when a test shows the correct result with no problems, call run_python ONCE with exactly the script that passed (same code), with a "
+		"one-sentence summary. The user is shown the final script and the last preview and decides whether it runs on their real document.\n"
+		"5. After run_python, say in one or two sentences what you did. If the user rejects the script, ask what to change, then test again.\n"
+		"Never call run_python for exploring or experimenting, and never run an untested script on the real document.\n"
+		"Do not call export_ad_pdf, saveDoc or any other function that writes a file inside test_script; put those only in the final run_python script, "
+		"so the user approves them. (A test cannot check the PDF itself; check the document it exports.)\n"
+		"\n"
+		"Rules for scripts (for both tools; they run inside Scribus and can use the scribus module, from scribus import *):\n"
 		"- Units are points unless you call setUnit(). An A4 page is 595 x 842 pt.\n"
 		"- There may be no document open: check haveDoc() and create one with newDocument(...) if needed.\n"
 		"- Each run is one undo step for the user, so do one complete, logical change per call.\n"
@@ -167,30 +186,140 @@ namespace
 			if (code.trimmed().isEmpty())
 				return QtFuture::makeReadyValueFuture(LLMQore::ToolResult::error(QStringLiteral("The code parameter is empty.")));
 
-			const QVariantMap result = m_runner(code);
-			const bool ok = result.value("ok").toBool();
-			const QString output = result.value("output").toString();
-			const QString error = result.value("error").toString();
+			auto promise = std::make_shared<QPromise<LLMQore::ToolResult>>();
+			promise->start();
+			QFuture<LLMQore::ToolResult> future = promise->future();
+			QTimer::singleShot(0, this, [this, promise, code, summary]() {
+				const QVariantMap result = m_runner(code);
+				const bool ok = result.value("ok").toBool();
+				const QString output = result.value("output").toString();
+				const QString error = result.value("error").toString();
 
-			QString text;
-			if (ok)
-			{
-				text = output.isEmpty() ? QStringLiteral("OK (the script printed nothing)") : QStringLiteral("OK\n") + output;
-			}
-			else
-			{
-				text = QStringLiteral("ERROR\n") + error;
-				if (!output.isEmpty())
-					text += QStringLiteral("\nOutput before the error:\n") + output;
-			}
-			text = clipped(text);
-			m_reporter(summary, ok, text);
-			return QtFuture::makeReadyValueFuture(ok ? LLMQore::ToolResult::text(text) : LLMQore::ToolResult::error(text));
+				QString text;
+				if (ok)
+				{
+					text = output.isEmpty() ? QStringLiteral("OK (the script printed nothing)") : QStringLiteral("OK\n") + output;
+				}
+				else
+				{
+					text = QStringLiteral("ERROR\n") + error;
+					if (!output.isEmpty())
+						text += QStringLiteral("\nOutput before the error:\n") + output;
+				}
+				text = clipped(text);
+				m_reporter(summary, ok, text);
+				promise->addResult(ok ? LLMQore::ToolResult::text(text) : LLMQore::ToolResult::error(text));
+				promise->finish();
+			});
+			return future;
 		}
 
 	private:
 		Runner m_runner;
 		Reporter m_reporter;
+	};
+
+	/**
+	 * Tries a script on a scratch copy of the document and reports what it produced: the script's output,
+	 * automatic checks (text overflow, tiny text, objects off the page) and a preview image. ReadOnly, so the
+	 * user is not asked: nothing in the real documents changes. The model uses it until the result is right,
+	 * then runs the final script with run_python.
+	 */
+	class TestScriptTool : public LLMQore::BaseTool
+	{
+	public:
+		using Runner = std::function<QVariantMap(const QString&, const QString&)>;
+		using Reporter = std::function<void(const QString& summary, bool ok, const QString& text, const QString& preview)>;
+
+		TestScriptTool(Runner runner, Reporter reporter, bool attachImage, QObject* parent)
+			: LLMQore::BaseTool(parent),
+			  m_runner(std::move(runner)),
+			  m_reporter(std::move(reporter)),
+			  m_attachImage(attachImage)
+		{
+		}
+
+		QString id() const override { return QStringLiteral("test_script"); }
+		QString displayName() const override { return QStringLiteral("Test a script on a scratch copy"); }
+		LLMQore::ToolSafety safety() const override { return LLMQore::ToolSafety::ReadOnly; }
+		QString description() const override
+		{
+			return QStringLiteral(
+				"Runs a Python script (same scribus module and helper functions as run_python) on a THROW-AWAY COPY of the open "
+				"document, or in scratch documents the script creates, and discards everything afterwards. The user's documents are never "
+				"changed and the user is not asked. Returns what the script printed, a verification report (every object with position, size, "
+				"fonts and sizes, text overflow, text under 5 pt, objects off the page) and, where supported, a preview image of page 1. "
+				"Use it to inspect the document, and to develop a change: write the script, test it, read the report, fix the script, test again, "
+				"until the result is right. Only then call run_python with the final script.");
+		}
+		QJsonObject parametersSchema() const override
+		{
+			return QJsonObject{
+				{"type", "object"},
+				{"properties", QJsonObject{
+					{"code", QJsonObject{
+						{"type", "string"},
+						{"description", "The Python source code to test."}}},
+					{"summary", QJsonObject{
+						{"type", "string"},
+						{"description", "Optional. One short sentence, in the user's language, saying what this attempt tries."}}}}},
+				{"required", QJsonArray{"code"}}};
+		}
+
+		QFuture<LLMQore::ToolResult> executeAsync(const QJsonObject& input) override
+		{
+			const QString code = input.value("code").toString();
+			const QString summary = input.value("summary").toString();
+			if (code.trimmed().isEmpty())
+				return QtFuture::makeReadyValueFuture(LLMQore::ToolResult::error(QStringLiteral("The code parameter is empty.")));
+
+			// Run from the event loop, not inside the library's tool-call callback: the test opens and closes windows and
+			// spins nested event loops, which must not happen while the library is still dispatching this call.
+			auto promise = std::make_shared<QPromise<LLMQore::ToolResult>>();
+			promise->start();
+			QFuture<LLMQore::ToolResult> future = promise->future();
+			QTimer::singleShot(0, this, [this, promise, code, summary]() {
+				static int counter = 0;
+				const QString previewPath = QDir::tempPath() + QStringLiteral("/scribus-agent-preview-%1-%2.png")
+					.arg(QCoreApplication::applicationPid()).arg(++counter);
+				QFile::remove(previewPath);
+				const QVariantMap result = m_runner(code, previewPath);
+				const bool ok = result.value("ok").toBool();
+				const QString output = result.value("output").toString();
+				const QString error = result.value("error").toString();
+				const QString preview = result.value("preview").toString();
+
+				QString text;
+				if (ok)
+				{
+					text = QStringLiteral("TEST OK (scratch copy, nothing in the real document changed)\n") + output;
+				}
+				else
+				{
+					text = QStringLiteral("TEST FAILED (scratch copy, nothing in the real document changed)\n") + error;
+					if (!output.isEmpty())
+						text += QStringLiteral("\nOutput before the error:\n") + output;
+				}
+				text = clipped(text);
+				m_reporter(summary, ok, text, preview);
+
+				LLMQore::ToolResult toolResult = ok ? LLMQore::ToolResult::text(text) : LLMQore::ToolResult::error(text);
+				if (m_attachImage && !preview.isEmpty())
+				{
+					QFile file(preview);
+					if (file.open(QIODevice::ReadOnly))
+						toolResult.content.append(LLMQore::ImageContent::fromBytes(file.readAll(), QStringLiteral("image/png")));
+				}
+				promise->addResult(toolResult);
+				promise->finish();
+			});
+			return future;
+		}
+
+	private:
+		Runner m_runner;
+		Reporter m_reporter;
+		bool m_attachImage;
 	};
 }
 
@@ -205,6 +334,8 @@ struct AgentController::Private
 	bool turnHadOutput { false }; // text or a tool call arrived during the current turn
 
 	ScriptRunner scriptRunner;
+	SandboxRunner sandboxRunner;
+	QString lastPreview;
 	bool autoApprove { false };
 	std::shared_ptr<QPromise<bool>> approval; // pending approval, answered by resolveApproval()
 };
@@ -288,6 +419,16 @@ void AgentController::setScriptRunner(ScriptRunner runner)
 	d->scriptRunner = std::move(runner);
 }
 
+void AgentController::setSandboxRunner(SandboxRunner runner)
+{
+	d->sandboxRunner = std::move(runner);
+}
+
+QString AgentController::lastPreviewPath() const
+{
+	return d->lastPreview;
+}
+
 void AgentController::setAutoApprove(bool autoApprove)
 {
 	d->autoApprove = autoApprove;
@@ -355,6 +496,29 @@ void AgentController::rebuildClient()
 			emit scriptFinished(summary, ok, text);
 		},
 		client));
+
+	// Scratch-copy testing (ReadOnly: no approval). Tool results carry the preview image only for providers that accept it.
+	const bool imagesInToolResults = s.provider == Provider::Claude || s.provider == Provider::OpenAICompatible || s.provider == Provider::Gemini;
+	client->tools()->addTool(new TestScriptTool(
+		[this](const QString& code, const QString& previewPath) -> QVariantMap {
+			if (!d->sandboxRunner)
+			{
+				return QVariantMap{
+					{"ok", false},
+					{"output", QString()},
+					{"error", QStringLiteral("Scripting is not available in this build.")}};
+			}
+			d->turnHadOutput = true;
+			return d->sandboxRunner(code, previewPath);
+		},
+		[this](const QString& summary, bool ok, const QString& text, const QString& preview) {
+			agentLog(QStringLiteral("test %1: %2").arg(ok ? QStringLiteral("OK") : QStringLiteral("ERROR"), text));
+			if (!preview.isEmpty())
+				d->lastPreview = preview;
+			emit scriptTested(summary, ok, text, preview);
+		},
+		imagesInToolResults, client));
+	client->setMaxToolContinuations(30);
 
 	// Ask the user before any Mutating tool runs. The future is settled by resolveApproval().
 	client->tools()->setExecutionGate(

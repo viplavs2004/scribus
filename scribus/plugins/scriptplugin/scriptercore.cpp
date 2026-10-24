@@ -10,6 +10,10 @@ for which a new license (GPL+exception) is in place.
 
 #include <QApplication>
 #include <QByteArray>
+#include <QDateTime>
+#include <QFile>
+#include <QMdiArea>
+#include <QMdiSubWindow>
 #include <QGlobalStatic>
 #include <QHash>
 #include <QMessageBox>
@@ -22,6 +26,7 @@ for which a new license (GPL+exception) is in place.
 #include <QWidget>
 
 #include "cmdutil.h"
+#include "fileloader.h"
 #include "pageitem.h"
 #include "pconsole.h"
 #include "prefscontext.h"
@@ -35,6 +40,7 @@ for which a new license (GPL+exception) is in place.
 #include "scribuscore.h"
 #include "scribusdoc.h"
 #include "scribusview.h"
+#include "scribuswin.h"
 #include "selection.h"
 #include "undomanager.h"
 #include "agent_helpers_py.h"
@@ -740,6 +746,92 @@ QVariantMap ScripterCore::runAgentScript(const QString& script)
 	result["ok"] = errorText.isEmpty();
 	result["output"] = output;
 	result["error"] = errorText;
+	return result;
+}
+
+
+static void agentCrumb(const QString& text)
+{
+	static const QString path = qEnvironmentVariable("SCRIBUS_AGENT_LOG");
+	if (path.isEmpty())
+		return;
+	QFile file(path);
+	if (file.open(QIODevice::Append | QIODevice::Text))
+		file.write((text + QLatin1Char('\n')).toUtf8());
+}
+
+QVariantMap ScripterCore::runAgentSandbox(const QString& script, const QString& previewPath)
+{
+	ScribusMainWindow* mainWin = ScCore->primaryMainWindow();
+	if (mainWin->scriptIsRunning())
+	{
+		QVariantMap busy;
+		busy["ok"] = false;
+		busy["output"] = QString();
+		busy["error"] = tr("Another script is already running.");
+		return busy;
+	}
+
+	agentCrumb(QStringLiteral("sandbox: start"));
+	QMdiArea* area = mainWin->mdiArea;
+	const QList<QMdiSubWindow*> windowsBefore = area->subWindowList();
+	QMdiSubWindow* originalWindow = area->activeSubWindow();
+
+	// A copy of the open document, so the script can be tried on the real content.
+	QString copyPath;
+	if (mainWin->HaveDoc)
+	{
+		copyPath = QDir::tempPath() + "/scribus-agent-scratch-" + QString::number(QDateTime::currentMSecsSinceEpoch()) + ".sla";
+		FileLoader loader(copyPath);
+		if (loader.saveFile(copyPath, mainWin->doc, nullptr))
+			mainWin->loadDoc(copyPath);
+		else
+			copyPath.clear();
+	}
+
+	agentCrumb(QStringLiteral("sandbox: copy loaded"));
+	QString code = script;
+	code += "\n\nprint(agent_verify(" + QString("r'") + QDir::toNativeSeparators(previewPath) + "'" + "))\n";
+	QVariantMap result = runAgentScript(code);
+	agentCrumb(QStringLiteral("sandbox: script done"));
+	result["preview"] = QFile::exists(previewPath) ? previewPath : QString();
+
+	// Throw away every document the test opened or created, and go back to the user's own.
+	for (int guard = 0; guard < 20 && area->subWindowList().size() > windowsBefore.size(); ++guard)
+	{
+		QMdiSubWindow* extra = nullptr;
+		for (QMdiSubWindow* w : area->subWindowList())
+		{
+			if (!windowsBefore.contains(w))
+			{
+				extra = w;
+				break;
+			}
+		}
+		if (extra == nullptr)
+			break;
+		// The scratch copy must never ask 'save changes?': clear its modified flag through its own window.
+		if (auto* scratchWin = qobject_cast<ScribusWin*>(extra->widget()))
+			if (scratchWin->doc())
+				scratchWin->doc()->setModified(false);
+	agentCrumb(QStringLiteral("sandbox: closing extra window"));
+		area->setActiveSubWindow(extra);
+		QApplication::processEvents();
+		if (mainWin->HaveDoc && mainWin->ActWin == qobject_cast<ScribusWin*>(extra->widget()))
+			mainWin->doc->setModified(false);
+		mainWin->slotFileClose();
+	agentCrumb(QStringLiteral("sandbox: extra window closed"));
+		QApplication::processEvents();
+	}
+	if (originalWindow != nullptr && area->subWindowList().contains(originalWindow))
+		area->setActiveSubWindow(originalWindow);
+	agentCrumb(QStringLiteral("sandbox: restoring original"));
+	if (!copyPath.isEmpty())
+	{
+		mainWin->removeRecent(copyPath);
+		QFile::remove(copyPath);
+	}
+	agentCrumb(QStringLiteral("sandbox: end"));
 	return result;
 }
 

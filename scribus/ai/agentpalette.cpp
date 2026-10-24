@@ -17,10 +17,13 @@ to the COPYING file provided with the program.
 #include <QLabel>
 #include <QLineEdit>
 #include <QMetaObject>
+#include <QFile>
+#include <QPixmap>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QTextBrowser>
 #include <QTextCursor>
+#include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -58,6 +61,26 @@ namespace
 		}
 		return scriptResult;
 	}
+
+	QVariantMap runSandboxThroughScripter(const QString& code, const QString& previewPath)
+	{
+		QVariantMap result{ {"ok", false}, {"output", QString()}, {"error", QString()}, {"preview", QString()} };
+		QObject* scripter = qApp->property("scribusScripterCore").value<QObject*>();
+		if (!scripter)
+		{
+			result["error"] = QObject::tr("The Python scripter plugin is not loaded.");
+			return result;
+		}
+		QVariantMap scriptResult;
+		const bool invoked = QMetaObject::invokeMethod(scripter, "runAgentSandbox", Qt::DirectConnection,
+		                                               Q_RETURN_ARG(QVariantMap, scriptResult), Q_ARG(QString, code), Q_ARG(QString, previewPath));
+		if (!invoked)
+		{
+			result["error"] = QObject::tr("The scripter plugin does not support scratch tests.");
+			return result;
+		}
+		return scriptResult;
+	}
 }
 
 AgentPalette::AgentPalette(QWidget* parent)
@@ -69,6 +92,30 @@ AgentPalette::AgentPalette(QWidget* parent)
 	languageChange();
 
 	m_controller->setScriptRunner(&runScriptThroughScripter);
+	m_controller->setSandboxRunner(&runSandboxThroughScripter);
+
+	// For automated tests only (UI automation of Qt widgets is unreliable): SCRIBUS_AGENT_MODEL picks the model,
+	// SCRIBUS_AGENT_PROMPT_FILE names a UTF-8 file whose text is sent shortly after start-up, and
+	// SCRIBUS_AGENT_AUTOAPPROVE=1 approves scripts without asking.
+	const QString testModel = qEnvironmentVariable("SCRIBUS_AGENT_MODEL");
+	if (!testModel.isEmpty())
+	{
+		m_modelEdit->setText(testModel);
+		applySettings();
+	}
+	if (qEnvironmentVariable("SCRIBUS_AGENT_AUTOAPPROVE") == QStringLiteral("1"))
+		m_controller->setAutoApprove(true);
+	const QString testPromptFile = qEnvironmentVariable("SCRIBUS_AGENT_PROMPT_FILE");
+	if (!testPromptFile.isEmpty())
+	{
+		QTimer::singleShot(qEnvironmentVariableIntValue("SCRIBUS_AGENT_PROMPT_DELAY") * 1000 + 12000, this, [this, testPromptFile]() {
+			QFile file(testPromptFile);
+			if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+				return;
+			m_input->setPlainText(QString::fromUtf8(file.readAll()).trimmed());
+			sendClicked();
+		});
+	}
 
 	// For automated tests only: SCRIBUS_AGENT_ATTACH names image files to attach at start-up.
 	const QString preAttached = qEnvironmentVariable("SCRIBUS_AGENT_ATTACH");
@@ -81,6 +128,7 @@ AgentPalette::AgentPalette(QWidget* parent)
 	connect(m_controller, &AgentController::assistantChunk, this, &AgentPalette::onAssistantChunk);
 	connect(m_controller, &AgentController::approvalRequested, this, &AgentPalette::onApprovalRequested);
 	connect(m_controller, &AgentController::scriptFinished, this, &AgentPalette::onScriptFinished);
+	connect(m_controller, &AgentController::scriptTested, this, &AgentPalette::onScriptTested);
 	connect(m_controller, &AgentController::turnFinished, this, &AgentPalette::onTurnFinished);
 	connect(m_controller, &AgentController::turnFailed, this, &AgentPalette::onTurnFailed);
 	connect(m_controller, &AgentController::busyChanged, this, &AgentPalette::onBusyChanged);
@@ -102,6 +150,9 @@ void AgentPalette::buildUi()
 	approvalLayout->setContentsMargins(0, 0, 0, 0);
 	m_approvalSummary = new QLabel(m_approvalBar);
 	m_approvalSummary->setWordWrap(true);
+	m_approvalPreview = new QLabel(m_approvalBar);
+	m_approvalPreview->setAlignment(Qt::AlignCenter);
+	m_approvalPreview->setVisible(false);
 	m_approvalCode = new QPlainTextEdit(m_approvalBar);
 	m_approvalCode->setReadOnly(true);
 	m_approvalCode->setLineWrapMode(QPlainTextEdit::NoWrap);
@@ -117,6 +168,7 @@ void AgentPalette::buildUi()
 	approvalButtonLayout->addWidget(m_rejectButton);
 	approvalButtonLayout->addWidget(m_approveButton);
 	approvalLayout->addWidget(m_approvalSummary);
+	approvalLayout->addWidget(m_approvalPreview);
 	approvalLayout->addWidget(m_approvalCode);
 	approvalLayout->addWidget(m_approvalAlways);
 	approvalLayout->addWidget(approvalButtons);
@@ -325,6 +377,7 @@ void AgentPalette::updateAttachments()
 
 void AgentPalette::newChatClicked()
 {
+	m_testCount = 0;
 	m_controller->newConversation();
 	m_transcript->clear();
 	m_attachments.clear();
@@ -360,8 +413,15 @@ void AgentPalette::onAssistantChunk(const QString& chunk)
 void AgentPalette::onApprovalRequested(const QString& summary, const QString& code)
 {
 	m_approvalSummary->setText(summary.isEmpty()
-		? tr("The agent wants to run a script in Scribus:")
-		: tr("The agent wants to run a script: %1").arg(summary));
+		? tr("The agent is ready to run the final script on your document:")
+		: tr("The agent is ready to run the final script on your document: %1").arg(summary));
+	const QPixmap preview(m_controller->lastPreviewPath());
+	m_approvalPreview->setVisible(!preview.isNull());
+	if (!preview.isNull())
+	{
+		m_approvalPreview->setPixmap(preview.scaled(320, 220, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+		m_approvalPreview->setToolTip(tr("Result of the last test on a scratch copy"));
+	}
 	m_approvalCode->setPlainText(code);
 	showApprovalBar(true);
 }
@@ -393,6 +453,19 @@ void AgentPalette::onScriptFinished(const QString& summary, bool ok, const QStri
 	m_transcript->append(QStringLiteral("<p><i>%1 %2</i></p><pre>%3</pre>")
 		.arg(QString(QChar(ok ? 0x2714 : 0x2718)), title.toHtmlEscaped(), resultText.toHtmlEscaped()));
 	// What the model says after the script gets its own block.
+	startAssistantMessage();
+}
+
+void AgentPalette::onScriptTested(const QString& summary, bool ok, const QString& resultText, const QString& previewPath)
+{
+	Q_UNUSED(previewPath);
+	++m_testCount;
+	const QString title = summary.isEmpty() ? tr("Test") : summary;
+	QString shown = resultText;
+	if (shown.size() > 700)
+		shown = shown.left(700) + QStringLiteral("\n...");
+	m_transcript->append(QStringLiteral("<p><i>%1 %2 #%3: %4</i></p><pre>%5</pre>")
+		.arg(QString(QChar(ok ? 0x2714 : 0x2718)), tr("Scratch test")).arg(m_testCount).arg(title.toHtmlEscaped(), shown.toHtmlEscaped()));
 	startAssistantMessage();
 }
 

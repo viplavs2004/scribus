@@ -649,3 +649,83 @@ def use_unicode_font(frame=None, font=None):
             i += 1
     _replace_runs(name, edits)
     return scribus.getAllText(name)
+
+
+# ---------------------------------------------------------------------------------------------
+# Verification: run after the agent's test script on a scratch copy. Describes what the script
+# produced, flags problems and renders a preview of the first page.
+
+def agent_verify(preview_path=None):
+    """Report on the open document: objects, text fit, font sizes, off-page objects. Writes a PNG preview."""
+    import scribus
+    if not scribus.haveDoc():
+        return 'VERIFY: no document is open after the script ran.'
+    lines = []
+    problems = []
+    page_w, page_h = scribus.getPageSize()
+    lines.append('VERIFY: %d page(s), page size %.1f x %.1f pt (%.2f x %.2f cm)' % (
+        scribus.pageCount(), page_w, page_h, page_w / 28.3465, page_h / 28.3465))
+    seen_chain = set()
+    names = scribus.getAllObjects()
+    lines.append('%d object(s)' % len(names))
+    for name in names:
+        kind = scribus.getObjectType(name)
+        x, y = scribus.getPosition(name)
+        w, h = scribus.getSize(name)
+        desc = '%s %s at (%.1f, %.1f) size %.1f x %.1f' % (kind, name, x, y, w, h)
+        if x < -0.5 or y < -0.5 or x + w > page_w + 0.5 or y + h > page_h + 0.5:
+            if kind != 'TextFrame' or x + w > page_w + 40 or y + h > page_h + 40:
+                problems.append('%s sticks out of the page' % name)
+        if kind == 'TextFrame':
+            length = scribus.getTextLength(name)
+            desc += ', %d chars' % length
+            if length == 0:
+                desc += ' (empty)'
+            else:
+                sizes, fonts = set(), set()
+                step = 1 if length <= 3000 else max(1, length // 3000)
+                for i in range(0, length, step):
+                    scribus.selectText(i, 1, name)
+                    sizes.add(round(scribus.getFontSize(name), 2))
+                    fonts.add(scribus.getFont(name))
+                scribus.selectText(0, 0, name)
+                desc += ', fonts %s, sizes %s pt' % (sorted(fonts), sorted(sizes))
+                if min(sizes) < 5.0:
+                    problems.append('%s has text smaller than 5 pt (%.1f pt): unreadable in a newspaper' % (name, min(sizes)))
+                last = name
+                try:
+                    last = scribus.getLastLinkedFrame(name)
+                except Exception:
+                    pass
+                if last not in seen_chain:
+                    seen_chain.add(last)
+                    try:
+                        scribus.layoutTextChain(name)
+                    except Exception:
+                        pass
+                    if scribus.textOverflows(last, 1):
+                        problems.append('text overflows frame %s: the end of the text is cut off' % last)
+                    desc += ', %d lines in this frame' % scribus.getTextLines(name)
+        elif kind == 'ImageFrame':
+            try:
+                desc += ', image %r' % scribus.getImageFile(name)
+            except Exception:
+                pass
+        lines.append('  ' + desc)
+    if preview_path:
+        try:
+            scribus.gotoPage(1)
+            scale = max(25, min(400, int(1000.0 / max(page_w, page_h) * 100)))
+            ie = scribus.ImageExport()
+            ie.type = 'PNG'
+            ie.scale = scale
+            ie.name = preview_path
+            ie.save()
+        except Exception as e:
+            problems.append('preview could not be rendered: %s' % e)
+    if problems:
+        lines.append('PROBLEMS FOUND (%d):' % len(problems))
+        lines.extend('  - ' + p for p in problems)
+    else:
+        lines.append('No problems found by the automatic checks (text fits, nothing smaller than 5 pt, nothing off the page). Still compare the preview and the numbers with what the user asked for.')
+    return chr(10).join(lines)

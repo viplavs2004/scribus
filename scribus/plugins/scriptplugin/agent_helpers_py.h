@@ -658,6 +658,86 @@ R"PYHELPERS(    it (font defaults to unicode_hindi_font()). Only the Kruti Dev r
     return scribus.getAllText(name)
 
 
+# ---------------------------------------------------------------------------------------------
+# Verification: run after the agent's test script on a scratch copy. Describes what the script
+# produced, flags problems and renders a preview of the first page.
+
+def agent_verify(preview_path=None):
+    """Report on the open document: objects, text fit, font sizes, off-page objects. Writes a PNG preview."""
+    import scribus
+    if not scribus.haveDoc():
+        return 'VERIFY: no document is open after the script ran.'
+    lines = []
+    problems = []
+    page_w, page_h = scribus.getPageSize()
+    lines.append('VERIFY: %d page(s), page size %.1f x %.1f pt (%.2f x %.2f cm)' % (
+        scribus.pageCount(), page_w, page_h, page_w / 28.3465, page_h / 28.3465))
+    seen_chain = set()
+    names = scribus.getAllObjects()
+    lines.append('%d object(s)' % len(names))
+    for name in names:
+        kind = scribus.getObjectType(name)
+        x, y = scribus.getPosition(name)
+        w, h = scribus.getSize(name)
+        desc = '%s %s at (%.1f, %.1f) size %.1f x %.1f' % (kind, name, x, y, w, h)
+        if x < -0.5 or y < -0.5 or x + w > page_w + 0.5 or y + h > page_h + 0.5:
+            if kind != 'TextFrame' or x + w > page_w + 40 or y + h > page_h + 40:
+                problems.append('%s sticks out of the page' % name)
+        if kind == 'TextFrame':
+            length = scribus.getTextLength(name)
+            desc += ', %d chars' % length
+            if length == 0:
+                desc += ' (empty)'
+            else:
+                sizes, fonts = set(), set()
+                step = 1 if length <= 3000 else max(1, length // 3000)
+                for i in range(0, length, step):
+                    scribus.selectText(i, 1, name)
+                    sizes.add(round(scribus.getFontSize(name), 2))
+                    fonts.add(scribus.getFont(name))
+                scribus.selectText(0, 0, name)
+                desc += ', fonts %s, sizes %s pt' % (sorted(fonts), sorted(sizes))
+                if min(sizes) < 5.0:
+                    problems.append('%s has text smaller than 5 pt (%.1f pt): unreadable in a newspaper' % (name, min(sizes)))
+                last = name
+                try:
+                    last = scribus.getLastLinkedFrame(name)
+                except Exception:
+                    pass
+                if last not in seen_chain:
+                    seen_chain.add(last)
+                    try:
+                        scribus.layoutTextChain(name)
+                    except Exception:
+                        pass
+                    if scribus.textOverflows(last, 1):
+                        problems.append('text overflows frame %s: the end of the text is cut off' % last)
+                    desc += ', %d lines in this frame' % scribus.getTextLines(name)
+        elif kind == 'ImageFrame':
+            try:
+                desc += ', image %r' % scribus.getImageFile(name)
+            except Exception:
+                pass
+        lines.append('  ' + desc)
+    if preview_path:
+        try:
+            scribus.gotoPage(1)
+            scale = max(25, min(400, int(1000.0 / max(page_w, page_h) * 100)))
+            ie = scribus.ImageExport()
+            ie.type = 'PNG'
+            ie.scale = scale
+            ie.name = preview_path
+            ie.save()
+        except Exception as e:
+            problems.append('preview could not be rendered: %s' % e)
+    if problems:
+        lines.append('PROBLEMS FOUND (%d):' % len(problems))
+        lines.extend('  - ' + p for p in problems)
+    else:
+        lines.append('No problems found by the automatic checks (text fits, nothing smaller than 5 pt, nothing off the page). Still compare the preview and the numbers with what the user asked for.')
+    return chr(10).join(lines)
+
+
 # -*- coding: utf-8 -*-
 """Newspaper notice ads for the Scribus AI agent.
 
@@ -763,7 +843,8 @@ def greater_noida_mutation_body(flat, floor, tower, area, project, plot, sector,
         'Area-%(area)s Sqm., %(project)s Plot No- %(plot)s, Sector-%(sector)s, Greater Noida '
         '\u091c\u094b \u0915\u093f %(title)s %(owner)s \u0928\u093f\u0935\u093e\u0938\u0940 %(address)s \u0915\u0947 \u0928\u093e\u092e \u092a\u0930 \u0909\u092a \u0928\u093f\u092c\u0902\u0927\u0928 \u0915\u093e\u0930\u094d\u092f\u093e\u0932\u092f, \u0938\u0926\u0930 \u0917\u094c\u0924\u092e\u092c\u0941\u0926\u094d\u0927 \u0928\u0917\u0930 \u092e\u0947\u0902 '
         '\u0926\u093f\u0928\u093e\u0902\u0915\u2013%(date)s \u0915\u094b \u092a\u0902\u091c\u0940\u0915\u0943\u0924 \u0939\u0948\u0964 %(title)s %(owner)s \u0915\u0940 \u092e\u0943\u0924\u094d\u092f\u0941 \u0915\u0947 \u0909\u092a\u0930\u093e\u0928\u094d\u0924 \u0909\u0928\u0915\u0947 \u092a\u0941\u0924\u094d\u0930 %(applicant)s \u0928\u0947 \u0909\u0915\u094d\u0924 '
-        '\u092d\u0942\u0916\u0923\u094d\u0921/\u092d\u0935\u0928 \u0915\u093e \u0928\u093e\u092e\u093e\u0902\u0924\u0930\u0923 \u092a\u094d\u0930\u0938\u094d\u0924\u0941\u0924 \u092a\u094d\u0930\u092a\u0924\u094d\u0930\u094b\u0902 \u0915\u0947 \u0906\u0927\u093e\u0930 \u092a\u0930 \u0905\u092a\u0928\u0947 \u092a\u0915\u094d\u0937 \u092e\u0947\u0902 \u0915\u0930\u0928\u0947 \u0939\u0947\u0924\u0941 \u092e\u094d\u092f\u0942\u091f\u0947\u0936\u0928 \u092a\u094d\u0930\u092a\u0924\u094d\u0930 \u092a\u094d\u0930\u0938\u094d\u0924\u0941\u0924 '
+)PYHELPERS"
+R"PYHELPERS(        '\u092d\u0942\u0916\u0923\u094d\u0921/\u092d\u0935\u0928 \u0915\u093e \u0928\u093e\u092e\u093e\u0902\u0924\u0930\u0923 \u092a\u094d\u0930\u0938\u094d\u0924\u0941\u0924 \u092a\u094d\u0930\u092a\u0924\u094d\u0930\u094b\u0902 \u0915\u0947 \u0906\u0927\u093e\u0930 \u092a\u0930 \u0905\u092a\u0928\u0947 \u092a\u0915\u094d\u0937 \u092e\u0947\u0902 \u0915\u0930\u0928\u0947 \u0939\u0947\u0924\u0941 \u092e\u094d\u092f\u0942\u091f\u0947\u0936\u0928 \u092a\u094d\u0930\u092a\u0924\u094d\u0930 \u092a\u094d\u0930\u0938\u094d\u0924\u0941\u0924 '
         '\u0915\u093f\u092f\u0947 \u0939\u0948\u0964 \u0905\u0924\u0903 \u0907\u0938 \u092e\u094d\u092f\u0942\u091f\u0947\u0936\u0928 \u0915\u0947 \u0938\u092e\u094d\u092c\u0928\u094d\u0927 \u092e\u0947\u0902 \u092f\u0926\u093f \u0915\u093f\u0938\u0940 \u0935\u094d\u092f\u0915\u094d\u0924\u093f \u0915\u094b \u0915\u094b\u0908 \u0906\u092a\u0924\u094d\u0924\u093f \u0939\u094b \u0924\u094b \u092a\u094d\u0930\u0915\u093e\u0936\u0928 \u0924\u093f\u0925\u093f \u0915\u0947 %(days)s '
         '\u0926\u093f\u0928 \u0915\u0947 \u0905\u0928\u094d\u0926\u0930 \u0905\u092a\u0928\u0940 \u0932\u093f\u0916\u093f\u0924 \u0906\u092a\u0924\u094d\u0924\u093f \u092a\u094d\u0930\u093e\u0927\u093f\u0915\u0930\u0923 \u0915\u093e\u0930\u094d\u092f\u093e\u0932\u092f \u092e\u0947\u0902 \u0926\u0930\u094d\u091c \u0915\u0930\u093e\u0928\u0947 \u0915\u093e \u0915\u0937\u094d\u091f \u0915\u0930\u0947\u0902, \u0905\u0928\u094d\u092f\u0925\u093e \u0928\u093f\u092f\u092e\u093e\u0928\u0941\u0938\u093e\u0930 '
         '\u092a\u094d\u0930\u093e\u0927\u093f\u0915\u0930\u0923 \u0905\u092d\u093f\u0932\u0947\u0916\u094b\u0902 %(applicant)s S/o Late %(late)s %(owner)s \u0915\u093e \u0928\u093e\u092e \u0926\u0930\u094d\u091c \u0915\u0930 \u0926\u093f\u092f\u093e \u091c\u093e\u092f\u0947\u0917\u093e\u0964'
@@ -827,8 +908,7 @@ def _style(frame, size, scale, align, leading):
     scribus.setTextScalingH(scale * 100.0, frame)
     scribus.setLineSpacingMode(0, frame)
     scribus.setLineSpacing(leading, frame)
-)PYHELPERS"
-R"PYHELPERS(    scribus.setTextAlignment(align, frame)
+    scribus.setTextAlignment(align, frame)
     scribus.setTextColor('Black', frame)
     scribus.setTextDistances(0, 0, 0, 0, frame)
 
@@ -1003,7 +1083,8 @@ def create_notice_ad(template, body, width_cm=None, height_cm=None, english_font
         if body_overflows(size, low):
             return None
         while high - low > 0.002:
-            mid = (low + high) / 2.0
+)PYHELPERS"
+R"PYHELPERS(            mid = (low + high) / 2.0
             if body_overflows(size, mid):
                 high = mid
             else:
@@ -1090,8 +1171,7 @@ def create_column_notice(paragraphs, width_cm=3.5, height_cm=10.5, english_font=
     min_pt       the smallest body size the fit may use (never below 5 pt)
     min_scale    the narrowest horizontal scale the fit uses before it makes the type smaller
 
-)PYHELPERS"
-R"PYHELPERS(    Bold and italic are not applied: Kruti Dev has no styled variants installed.
+    Bold and italic are not applied: Kruti Dev has no styled variants installed.
     """
     import scribus
     if min_pt < ABSOLUTE_MIN_PT:

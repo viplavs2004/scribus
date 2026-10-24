@@ -54,6 +54,8 @@ public:
 	 * The result has the keys ok (bool), output (QString) and error (QString).
 	 */
 	using ScriptRunner = std::function<QVariantMap(const QString& code)>;
+	/** Runs code on a scratch copy; returns ok, output, error and preview (path of a PNG). */
+	using SandboxRunner = std::function<QVariantMap(const QString& code, const QString& previewPath)>;
 
 	explicit AgentController(QObject* parent = nullptr);
 	~AgentController() override;
@@ -67,6 +69,9 @@ public:
 	void setSettings(const Settings& settings);
 
 	void setScriptRunner(ScriptRunner runner);
+	void setSandboxRunner(SandboxRunner runner);
+	/** @brief PNG of the last scratch test, for showing next to the approval request (may be empty). */
+	QString lastPreviewPath() const;
 
 	/** @brief When true, scripts run without asking the user first. */
 	void setAutoApprove(bool autoApprove);
@@ -89,6 +94,8 @@ signals:
 	void assistantChunk(const QString& chunk);
 	/** @brief The model wants to run a script and waits for resolveApproval(). */
 	void approvalRequested(const QString& summary, const QString& code);
+	/** @brief The model tried a script on a scratch copy (nothing in the user's documents changed). */
+	void scriptTested(const QString& summary, bool ok, const QString& resultText, const QString& previewPath);
 	/** @brief A script the model asked for has run (successfully or not). */
 	void scriptFinished(const QString& summary, bool ok, const QString& resultText);
 	/** @brief The turn ended successfully. */
