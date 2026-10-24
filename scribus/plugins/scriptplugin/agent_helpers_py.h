@@ -1191,8 +1191,10 @@ def export_ad_pdf(path, standard='x1a', profile=None, title='Notice ad'):
     import scribus
     if standard not in PDF_STANDARDS:
         raise ValueError('standard must be one of %s' % ', '.join(sorted(PDF_STANDARDS)))
+    path = os.path.expanduser(path)                          # '~/Desktop/ad.pdf' works
     if not os.path.dirname(path):
         path = os.path.join(output_dir(), path)               # a bare file name goes to the output folder
+    path = os.path.abspath(path)
     if not path.lower().endswith('.pdf'):
         path += '.pdf'
     scribus.setInfo('Scribus AI agent', title, '')
@@ -1207,6 +1209,7 @@ def export_ad_pdf(path, standard='x1a', profile=None, title='Notice ad'):
         pdf.info = title
         pdf.printprofc = profile or DEFAULT_OUTPUT_PROFILE
     pdf.save()
+    print('PDF saved to: ' + path)
     return path
 )PYHELPERS";
 

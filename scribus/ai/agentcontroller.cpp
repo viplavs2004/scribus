@@ -77,7 +77,7 @@ namespace
 		"to Kruti Dev and sets English in Times New Roman. It returns a report: print it, and tell the user the body size, how much the letters were "
 		"condensed, and every entry of report['warnings']. Do not set font sizes or fonts yourself for these ads.\n"
 		"- export_ad_pdf(file_name, standard='x1a') writes the PDF. standard is 'x1a', 'x3' or 'x4' for PDF/X (preferred by the press) or 'plain'. "
-		"A bare file name goes to the user's output folder. Use PDF/X unless the user asks for a plain PDF.\n"
+		"A bare file name goes to the user's Documents folder; if the user names a place such as the Desktop, pass a full path, for example os.path.join(os.path.expanduser('~'), 'Desktop', 'name.pdf'). The function prints the full path of the file: always tell the user that exact full path. Use PDF/X unless the user asks for a plain PDF.\n"
 		"- create_column_notice(paragraphs, width_cm=3.5, height_cm=10.5, english_font='Times New Roman') makes a bordered notice for a narrow "
 		"column: court, tribunal, consumer commission or revenue-court notices, summons and similar legal notices with no logo. paragraphs is a "
 		"list of (text, align) or (text, align, size_factor) with align 'center', 'left', 'right' or 'justify'. Court name and case-number lines "
