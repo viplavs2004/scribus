@@ -1,0 +1,4 @@
+[submodule "tools/scribus-mcp"]
+	path = tools/scribus-mcp
+	url = https://github.com/viplavs2004/scribus-mcp.git
+	branch = integration
