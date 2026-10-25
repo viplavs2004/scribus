@@ -1,7 +1,0 @@
-LLMQore - vendored for the Scribus AI agent sidebar
-Upstream : https://github.com/Palm1r/llmqore
-Version  : v0.9.0, commit ea2a120caa37cb8bd199f103f642b9787db137d7
-License  : MIT (see LICENSE)
-Contents : include/ and source/ only, unmodified, except that
-           include/LLMQore/Version.hpp is generated from Version.hpp.in.
-Build    : win32/msvc2022/scribus-llmqore (static library, C++20, needs Qt Concurrent)

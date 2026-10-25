@@ -878,8 +878,6 @@ void ActionManager::initToolsMenuActions()
 	scrActions->insert(name, new ScrAction("", defaultKey(name), mainWindow));
 	name = "toolsInline";
 	scrActions->insert(name, new ScrAction("", defaultKey(name), mainWindow));
-	name = "toolsAgent";
-	scrActions->insert(name, new ScrAction("", defaultKey(name), mainWindow));
 	name = "toolsToolbarTools";
 	scrActions->insert(name, new ScrAction("", defaultKey(name), mainWindow));
 	name = "toolsToolbarPDF";
@@ -972,7 +970,6 @@ void ActionManager::initToolsMenuActions()
 	(*scrActions)["toolsAlignDistribute"]->setShortcutContext(Qt::ApplicationShortcut);
 	(*scrActions)["toolsSymbols"]->setShortcutContext(Qt::ApplicationShortcut);
 	(*scrActions)["toolsInline"]->setShortcutContext(Qt::ApplicationShortcut);
-	(*scrActions)["toolsAgent"]->setShortcutContext(Qt::ApplicationShortcut);
 
 	(*scrActions)["toolsDownloads"]->setToggleAction(true);
 	(*scrActions)["toolsMeasurements"]->setToggleAction(true);
@@ -1801,7 +1798,6 @@ void ActionManager::languageChange()
 	(*scrActions)["toolsAlignDistribute"]->setTexts( tr("&Align and Distribute"));
 	(*scrActions)["toolsSymbols"]->setTexts( tr("Symbols"));
 	(*scrActions)["toolsInline"]->setTexts( tr("Inline Items"));
-	(*scrActions)["toolsAgent"]->setTexts( tr("AI &Agent"));
 	(*scrActions)["toolsToolbarTools"]->setTexts( tr("&Tools"));
 	(*scrActions)["toolsToolbarPDF"]->setTexts( tr("P&DF Tools"));
 	(*scrActions)["toolsToolbarView"]->setTexts( tr("&View Tools"));
@@ -2508,7 +2504,6 @@ void ActionManager::createDefaultMenus()
 		<< "toolsAlignDistribute"
 		<< "toolsSymbols"
 		<< "toolsInline"
-		<< "toolsAgent"
 		<< "toolsToolbarTools"
 		<< "toolsToolbarPDF"
 		<< "toolsToolbarView";
