@@ -563,6 +563,33 @@ May throw IndexError if the selection is outside the bounds of the text.\n\
 PyObject *scribus_getframeselectedtextrange(PyObject * /*self*/, PyObject* args);
 
 /*! docstring */
+PyDoc_STRVAR(scribus_getcursorposition__doc__,
+QT_TR_NOOP("getCursorPosition([\"name\"])\n\
+\n\
+Gets the position of the text cursor (insertion point) in the story of the\n\
+text frame \"name\", as a character index counted from the start of the whole\n\
+story (across all linked frames). If \"name\" is not given the currently\n\
+selected item is used. When text is highlighted the cursor sits at one end of\n\
+the highlighted range. Read-only: does not change the selection or the cursor.\n\
+\n\
+May throw WrongFrameTypeError if the item is not a text frame.\n\
+"));
+/*! Get the text cursor position */
+PyObject *scribus_getcursorposition(PyObject * /*self*/, PyObject* args);
+
+/*! docstring */
+PyDoc_STRVAR(scribus_geteditmode__doc__,
+QT_TR_NOOP("getEditMode()\n\
+\n\
+Returns True if the document is currently in text edit mode (a frame is being\n\
+edited and has a text cursor, as when the user has clicked into a text frame),\n\
+False otherwise. Read-only. Together with getSelectedTextRange() and\n\
+getCursorPosition() this tells a script what the user is pointing at.\n\
+"));
+/*! Is the document in text edit mode */
+PyObject *scribus_geteditmode(PyObject * /*self*/);
+
+/*! docstring */
 PyDoc_STRVAR(scribus_deletetext__doc__,
 QT_TR_NOOP("deleteText([\"name\"])\n\
 \n\

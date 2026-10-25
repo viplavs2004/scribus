@@ -365,6 +365,8 @@ PyMethodDef scribus_methods[] = {
 	{ "getFillTransparency", scribus_getfilltransparency, METH_VARARGS, tr(scribus_getfilltransparency__doc__)},
 	{ "getFirstLineOffset", scribus_getfirstlineoffset, METH_VARARGS, tr(scribus_getfirstlineoffset__doc__)},
 	{ "getFirstLinkedFrame", scribus_getfirstlinkedframe, METH_VARARGS, tr(scribus_getfirstlinkedframe__doc__)},
+	{ "getCursorPosition", scribus_getcursorposition, METH_VARARGS, tr(scribus_getcursorposition__doc__)},
+	{ "getEditMode", (PyCFunction) scribus_geteditmode, METH_NOARGS, tr(scribus_geteditmode__doc__)},
 	{ "getFont", scribus_getfont, METH_VARARGS, tr(scribus_getfont__doc__)},
 	{ "getFontFeatures", scribus_getfontfeatures, METH_VARARGS, tr(scribus_getfontfeatures__doc__)},
 	{ "getFontNames", (PyCFunction) scribus_getfontnames, METH_NOARGS, tr(scribus_getfontnames__doc__)},

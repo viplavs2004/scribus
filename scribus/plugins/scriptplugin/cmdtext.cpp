@@ -1316,6 +1316,31 @@ PyObject *scribus_getframeselectedtextrange(PyObject* /* self */, PyObject* args
 	return Py_BuildValue("(ii)", item->itemText.startOfSelection() - item->firstInFrame(), item->itemText.selectionLength());
 }
 
+PyObject *scribus_getcursorposition(PyObject* /* self */, PyObject* args)
+{
+	PyESString name;
+	if (!PyArg_ParseTuple(args, "|es", "utf-8", name.ptr()))
+		return nullptr;
+	if (!checkHaveDocument())
+		return nullptr;
+	const PageItem *item = GetUniqueItem(QString::fromUtf8(name.c_str()));
+	if (item == nullptr)
+		return nullptr;
+	if (!item->isTextFrame())
+	{
+		PyErr_SetString(WrongFrameTypeError, QObject::tr("Cannot get the text cursor of a non-text frame.","python error").toUtf8().constData());
+		return nullptr;
+	}
+	return PyLong_FromLong(static_cast<long>(item->itemText.cursorPosition()));
+}
+
+PyObject *scribus_geteditmode(PyObject* /* self */)
+{
+	if (!checkHaveDocument())
+		return nullptr;
+	return PyBool_FromLong(ScCore->primaryMainWindow()->doc->appMode == modeEdit ? 1 : 0);
+}
+
 PyObject *scribus_deletetext(PyObject* /* self */, PyObject* args)
 {
 	PyESString name;
@@ -1763,6 +1788,8 @@ void cmdtextdocwarnings()
 	s << scribus_dehyphenatetext__doc__
 	  << scribus_deletetext__doc__
 	  << scribus_getalltext__doc__
+	  << scribus_getcursorposition__doc__
+	  << scribus_geteditmode__doc__
 	  << scribus_getcolumngap__doc__
 	  << scribus_getcolumns__doc__
 	  << scribus_getfirstlineoffset__doc__
