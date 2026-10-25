@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180">
+<path d="M180 92 C180 140.6 140.6 180 92 180 C43.4 180 4 140.6 4 92 C4 43.4 43.4 4 92 4 C140.6 4 180 43.4 180 92 Z" fill="#A3151B"/>
+<path d="M176 88 C176 136.6 136.6 176 88 176 C39.4 176 0 136.6 0 88 C0 39.4 39.4 0 88 0 C136.6 0 176 39.4 176 88 Z" fill="#E3262B"/>
+<path d="M164 88 C164 129.97 129.97 164 88 164 C46.03 164 12 129.97 12 88 C12 46.03 46.03 12 88 12 C129.97 12 164 46.03 164 88 Z" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="1 6"/>
+<path d="M154 88 C154 124.45 124.45 154 88 154 C51.55 154 22 124.45 22 88 C22 51.55 51.55 22 88 22 C124.45 22 154 51.55 154 88 Z" fill="#A3151B"/>
+<text x="88" y="56.44" text-anchor="middle" font-family="Arial" font-weight="900" font-size="16" fill="#FFFFFF">UP TO</text>
+<text x="88" y="102.64" text-anchor="middle" font-family="Arial" font-weight="900" font-size="46" fill="#FFFFFF">70%</text>
+<text x="88" y="134.48" text-anchor="middle" font-family="Arial" font-weight="900" font-size="22" fill="#FFFFFF">OFF</text>
+</svg>

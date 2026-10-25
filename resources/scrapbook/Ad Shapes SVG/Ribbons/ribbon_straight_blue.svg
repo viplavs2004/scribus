@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="292" height="68" viewBox="0 0 292 68">
+<path d="M0 16 L52 16 L52 68 L0 68 L20 42 Z" fill="#0B3A82"/>
+<path d="M292 16 L240 16 L240 68 L292 68 L272 42 Z" fill="#0B3A82"/>
+<path d="M44 52 L68 52 L68 66 Z" fill="#0B3A82"/>
+<path d="M248 52 L224 52 L224 66 Z" fill="#0B3A82"/>
+<path d="M36 0 L256 0 L256 52 L36 52 Z" fill="#1565C0"/>
+<path d="M44 6 L248 6 L248 46 L44 46 Z" fill="none" stroke="#6FB1F2" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="5 3"/>
+<text x="146" y="33.48" text-anchor="middle" font-family="Arial" font-weight="900" font-size="22" fill="#FFFFFF">YOUR TEXT HERE</text>
+</svg>

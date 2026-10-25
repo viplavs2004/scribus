@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="292" height="92" viewBox="0 0 292 92">
+<path d="M0 44 L48 44 L48 92 L0 92 L18 68 Z" fill="#A3151B"/>
+<path d="M292 44 L244 44 L244 92 L292 92 L274 68 Z" fill="#A3151B"/>
+<path d="M36 76 L62 58 L62 88 Z" fill="#A3151B"/>
+<path d="M256 76 L230 58 L230 88 Z" fill="#A3151B"/>
+<path d="M36 34 Q146 0 256 34 L256 76 Q146 42 36 76 Z" fill="#E3262B"/>
+<path d="M48 38 Q146 10 244 38" fill="none" stroke="#FF8A7A" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="5 3"/>
+<text x="146" y="50.8" text-anchor="middle" font-family="Arial" font-weight="900" font-size="20" fill="#FFFFFF">YOUR TEXT</text>
+</svg>

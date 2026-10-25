@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<PropertyGroup>
+		<AfterBuildDependsOn>
+			$(AfterBuildDependsOn);
+			Install_resources_scrapbook;
+		</AfterBuildDependsOn>
+	</PropertyGroup>
+	
+	<Target Name="Install_resources_scrapbook"> 
+		<ItemGroup>
+			<FilesToInstall_resources_scrapbook Include="$(MSBuildThisFileDirectory)**\*" />
+			<FilesToInstall_resources_scrapbook Remove="$(MSBuildThisFileDirectory)**\CMakeLists.txt" />
+			<FilesToInstall_resources_scrapbook Remove="$(MSBuildThisFileDirectory)**\.svn\**" />
+			<FilesToInstall_resources_scrapbook Remove="$(MSBuildThisFileDirectory)*.targets" />
+		</ItemGroup>
+		<Copy  
+			SourceFiles="@(FilesToInstall_resources_scrapbook)"  
+			DestinationFiles="@(FilesToInstall_resources_scrapbook-&gt;'$(OutDir)\share\scrapbook\%(RecursiveDir)%(Filename)%(Extension)')"
+			SkipUnchangedFiles="true"
+		/>
+	</Target>
+</Project>

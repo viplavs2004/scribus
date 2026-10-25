@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="226" height="66" viewBox="0 0 226 66">
+<path d="M16 4 L214 4 L226 16 L226 54 L214 66 L16 66 L4 54 L4 16 Z" fill="#A3151B"/>
+<path d="M12 0 L210 0 L222 12 L222 50 L210 62 L12 62 L0 50 L0 12 Z" fill="#E3262B"/>
+<path d="M14 7 L208 7 L215 14 L215 48 L208 55 L14 55 L7 48 L7 14 Z" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="111" y="38.14" text-anchor="middle" font-family="Arial" font-weight="900" font-size="21" fill="#FFFFFF">LIMITED OFFER</text>
+</svg>

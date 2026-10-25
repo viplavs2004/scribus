@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="234" height="96" viewBox="0 0 234 96">
+<path d="M4 28 L150 28 L150 4 L234 50 L150 96 L150 72 L4 72 Z" fill="#A3151B"/>
+<path d="M0 24 L146 24 L146 0 L230 46 L146 92 L146 68 L0 68 Z" fill="#E3262B"/>
+<path d="M6 32 L142 32" fill="none" stroke="#FF8A7A" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="76" y="53.48" text-anchor="middle" font-family="Arial" font-weight="900" font-size="22" fill="#FFFFFF">CLICK</text>
+</svg>

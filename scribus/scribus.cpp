@@ -100,7 +100,6 @@ for which a new license (GPL+exception) is in place.
 #include <utility>
 
 #include "actionmanager.h"
-#include "ai/agentpalette.h"
 #include "actionsearch.h"
 #include "api/api_application.h"
 #include "appmodehelper.h"
@@ -783,10 +782,6 @@ void ScribusMainWindow::initPalettes()
 	connect( scrapbookPalette, SIGNAL(scrapbookListChanged()), this, SLOT(rebuildScrapbookMenu()));
 	scrapbookPalette->installEventFilter(this);
 
-	// AI Agent
-	dockManager->agentPalette->setToggleViewAction(scrActions["toolsAgent"]);
-	dockManager->agentPalette->installEventFilter(this);
-
 	// Pages
 	pagePalette = dockManager->pagePalette;
 	pagePalette->setMainWindow(this);
@@ -923,7 +918,12 @@ void ScribusMainWindow::initScrapbook()
 		scrapbookPalette->readContents(scrapbookFile);
 	scrapbookPalette->setScrapbookFileName(scrapbookFile);
 	ScCore->fileWatcher->addDir(scrapbookFile, true);
-	scrapbookPalette->setOpenScrapbooks(m_prefsManager.appPrefs.scrapbookPrefs.RecentScrapbooks);
+	// Open the bundled "Ad Shapes" library (share/scrapbook/Ad Shapes) as a scrapbook tab if it is installed
+	QStringList openScrapbooks = m_prefsManager.appPrefs.scrapbookPrefs.RecentScrapbooks;
+	const QString bundledAdShapes = QDir::cleanPath(ScPaths::instance().shareDir() + "scrapbook/Ad Shapes");
+	if (QDir(bundledAdShapes).exists() && !openScrapbooks.contains(bundledAdShapes))
+		openScrapbooks.append(bundledAdShapes);
+	scrapbookPalette->setOpenScrapbooks(openScrapbooks);
 	rebuildRecentPasteMenu();
 	connect(scrapbookPalette, SIGNAL(updateRecentMenue()), this, SLOT(rebuildRecentPasteMenu()));
 	connect(ScCore->fileWatcher, SIGNAL(dirChanged(QString)), scrapbookPalette, SLOT(reloadLib(QString)));
@@ -1453,7 +1453,6 @@ void ScribusMainWindow::addDefaultWindowMenuItems()
 	scrMenuMgr->addMenuItemString("toolsScrapbook", "Windows");
 	scrMenuMgr->addMenuItemString("toolsSymbols", "Windows");
 	scrMenuMgr->addMenuItemString("toolsInline", "Windows");
-	scrMenuMgr->addMenuItemString("toolsAgent", "Windows");
 	scrMenuMgr->addMenuItemString("SEPARATOR", "Windows");
 	scrMenuMgr->addMenuItemString("toolsMeasurements", "Windows");
 	scrMenuMgr->addMenuItemString("toolsPreflightVerifier", "Windows");

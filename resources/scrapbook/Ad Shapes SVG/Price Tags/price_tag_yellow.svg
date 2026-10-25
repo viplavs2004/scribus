@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="216" height="104" viewBox="0 0 216 104">
+<path d="M4 54 L38 4 L210 4 Q216 4 216 10 L216 98 Q216 104 210 104 L38 104 Z" fill="#F2A900"/>
+<path d="M0 50 L34 0 L206 0 Q212 0 212 6 L212 94 Q212 100 206 100 L34 100 Z" fill="#FFD500"/>
+<path d="M45 50 C45 54.97 40.97 59 36 59 C31.03 59 27 54.97 27 50 C27 45.03 31.03 41 36 41 C40.97 41 45 45.03 45 50 Z" fill="#FFFFFF"/>
+<path d="M45 50 C45 54.97 40.97 59 36 59 C31.03 59 27 54.97 27 50 C27 45.03 31.03 41 36 41 C40.97 41 45 45.03 45 50 Z" fill="none" stroke="#F2A900" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="124" y="51.56" text-anchor="middle" font-family="Arial" font-weight="900" font-size="34" fill="#B3121A">Rs. 999</text>
+<text x="124" y="79.44" text-anchor="middle" font-family="Arial" font-weight="900" font-size="16" fill="#B3121A">ONLY</text>
+</svg>

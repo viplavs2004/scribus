@@ -7,6 +7,7 @@
 	<Import Project="loremipsum\install.targets" />
 	<Import Project="pagepresets\install.targets" />
 	<Import Project="profiles\install.targets" />
+	<Import Project="scrapbook\install.targets" />
 	<Import Project="swatches\install.targets" />
 	<Import Project="templates\install.targets" />
 	<Import Project="unicodemap\install.targets" />

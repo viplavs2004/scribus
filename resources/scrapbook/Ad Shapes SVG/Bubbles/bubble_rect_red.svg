@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="194" height="134" viewBox="0 0 194 134">
+<path d="M26 4 L172 4 C184.15 4 194 13.85 194 26 L194 78 C194 90.15 184.15 100 172 100 L26 100 C13.85 100 4 90.15 4 78 L4 26 C4 13.85 13.85 4 26 4 Z" fill="#A3151B"/>
+<path d="M40 94 L28 134 L84 98 Z" fill="#A3151B"/>
+<path d="M22 0 L168 0 C180.15 0 190 9.85 190 22 L190 74 C190 86.15 180.15 96 168 96 L22 96 C9.85 96 0 86.15 0 74 L0 22 C0 9.85 9.85 0 22 0 Z" fill="#E3262B"/>
+<path d="M36 90 L24 130 L80 94 Z" fill="#E3262B"/>
+<path d="M24 8 L166 8 C174.84 8 182 15.16 182 24 L182 72 C182 80.84 174.84 88 166 88 L24 88 C15.16 88 8 80.84 8 72 L8 24 C8 15.16 15.16 8 24 8 Z" fill="none" stroke="#FF8A7A" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="4 3"/>
+<text x="95" y="54.8" text-anchor="middle" font-family="Arial" font-weight="900" font-size="20" fill="#FFFFFF">YOUR MESSAGE</text>
+</svg>
